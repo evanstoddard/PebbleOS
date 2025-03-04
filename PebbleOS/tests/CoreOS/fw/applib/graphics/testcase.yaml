@@ -1,0 +1,6 @@
+tests:
+  # section.subsection
+  applib.graphics.ztest:
+    build_only: false
+    arch_allow: posix
+    tags: applib.graphics

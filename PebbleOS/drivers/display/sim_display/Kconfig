@@ -1,0 +1,2 @@
+config SIM_DISPLAY
+    bool "Simulator Display"
