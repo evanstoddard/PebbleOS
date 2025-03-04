@@ -3,17 +3,13 @@
  */
 
 /**
- * @file gtypes.h
+ * @file pebble_device.h
  * @author Evan Stoddard
- * @brief Includes for graphics primitive types
+ * @brief Various defines for target platform
  */
 
-#ifndef gtypes_h
-#define gtypes_h
-
-#include "types/gpoint.h"
-#include "types/grect.h"
-#include "types/gsize.h"
+#ifndef pebble_device_h
+#define pebble_device_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +18,11 @@ extern "C" {
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+#define DEVICE_DISPLAY_WIDTH_PIXELS (144U)
+
+#define DEVICE_DISPLAY_HEIGHT_PIXELS (168U)
+
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -34,4 +35,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* gtypes_h */
+#endif /* pebble_device_h */

@@ -7,7 +7,25 @@
 # guiconfig (GUI).
 
 menu "Zephyr"
-source "Kconfig.zephyr"
+    source "Kconfig.zephyr"
+
+    choice
+        prompt "Select target device"
+
+        config DEVICE_TINTIN
+            bool "Target TinTin Device"
+        
+
+        config DEVICE_BLANCA
+            bool "Target Blanca Device"
+    endchoice
+
+    config DEVICE_DISPLAY_WIDTH_PIXELS
+        int "Device Display Width in Pixels"
+
+    config DEVICE_DISPLAY_HEIGHT_PIXELS
+        int "Device Display Height in Pixels"
+
 endmenu
 
 module = COREOS

@@ -1,3 +1,5 @@
+
+
 / {
     display: display {
         compatible = "pebble-sim-display";

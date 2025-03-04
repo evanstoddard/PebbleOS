@@ -3,17 +3,13 @@
  */
 
 /**
- * @file gtypes.h
+ * @file device_blanca.h
  * @author Evan Stoddard
- * @brief Includes for graphics primitive types
+ * @brief 
  */
 
-#ifndef gtypes_h
-#define gtypes_h
-
-#include "types/gpoint.h"
-#include "types/grect.h"
-#include "types/gsize.h"
+#ifndef device_blanca_h
+#define device_blanca_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +18,10 @@ extern "C" {
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+#define DEVICE_DISPLAY_WIDTH_PIXELS (CONFIG_DEVICE_DISPLAY_WIDTH_PIXELS)
+
+#define DEVICE_DISPLAY_HEIGHT_PIXELS (CONFIG_DEVICE_DISPLAY_WIDTH_PIXELS)
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -34,4 +34,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* gtypes_h */
+#endif /* device_blanca_h */
