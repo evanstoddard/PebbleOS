@@ -3,20 +3,24 @@
  */
 
 /**
- * @file gtypes.h
+ * @file pebble_device.h
  * @author Evan Stoddard
- * @brief Includes for graphics primitive types
+ * @brief Various defines for target platform
  */
 
-#ifndef gtypes_h
-#define gtypes_h
-
-#include "types/gpoint.h"
-#include "types/grect.h"
-#include "types/gsize.h"
+#ifndef pebble_device_h
+#define pebble_device_h
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef CONFIG_DEVICE_TINTIN
+#include "device_tintin.h"
+#elif CONFIG_DEVICE_BLANCA
+#include "device_blanca.h"
+#else
+#error "Device type not defined or supported."
 #endif
 
 /*****************************************************************************
@@ -34,4 +38,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* gtypes_h */
+#endif /* pebble_device_h */
