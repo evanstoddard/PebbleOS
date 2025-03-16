@@ -3,3 +3,6 @@ zephyr
 modules
 .west
 .venv
+/.*cache
+compile_commands.json
+.clangd
