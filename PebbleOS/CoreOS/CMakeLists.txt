@@ -18,6 +18,8 @@ target_sources(app PRIVATE
     src/fw/applib/graphics/graphics.c
     src/fw/applib/ui/layer.c
     src/fw/applib/ui/progress_layer.c
+    src/fw/applib/graphics/text_resources.c
+    src/out.c
 )
 
 target_include_directories(app PRIVATE
