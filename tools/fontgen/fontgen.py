@@ -39,6 +39,16 @@ class _FontInfoPayload(BasePayload):
         ('codepoint_bytes', c_uint8)
     ]
 
+    def __init__(self):
+        super().__init__()
+
+        self.version = 0
+        self.max_height = 0
+        self.num_glyphs = 0
+        self.wildcard_codepoint = 0
+        self.hash_table_size = 0
+        self.codepoint_bytes = 0
+
 
 class _GlyphEntry(BasePayload):
     _fields_ = [
@@ -55,11 +65,24 @@ class _GlyphEntry(BasePayload):
     def __init__(self):
         super().__init__()
 
+        self.width = 0
+        self.height = 0
+        self.offset_top = 0
+        self.offset_left = 0
+        self.unused_0 = 0
+        self.unused_1 = 0
+        self.unused_2 = 0
+        self.horizontal_advance = 0
+
         self.bitmap = bytearray()
 
     def to_bytes(self):
         buf = super().to_bytes()
         buf += self.bitmap
+
+        # Align to 32-bit words
+        if len(buf) % 4:
+            buf += bytearray(4 - (len(buf) % 4))
 
         return buf
 
@@ -72,25 +95,24 @@ class _OffsetTableEntry(BasePayload):
 
     def __init__(self):
         super().__init__()
-
-        self.glyph_entries: [_GlyphEntry] = []
+        self.codepoint = 0
+        self.offset = 0
 
 
 class _HashTableEntry(BasePayload):
     _fields_ = [
         ('hash_value', c_uint8),
         ('offset_table_size', c_uint8),
-        ('offset', c_uint8)
+        ('offset', c_uint16)
     ]
 
     def __init__(self):
         super().__init__()
-
-        self.offset_entries: [_OffsetTableEntry] = []
+        self.hash_value = 0
+        self.offset_table_size = 0
+        self.offset = 0
 
     def to_bytes(self):
-        self.offset_table_size = _OffsetTableEntry().size()
-
         return super().to_bytes()
 
 
@@ -104,11 +126,17 @@ class FontGen:
 
         self.font_info = _FontInfoPayload()
         self.hash_table_entries = []
+        self.offset_tables: [[_OffsetTableEntry]] = []
+        self.glyph_entries: [_GlyphEntry] = []
 
         self.num_glyphs = 0
 
+        self.offset_table_count = 0
+        self.total_glyph_size_words = 0
+
         for i in range(kHASH_TABLE_SIZE):
             self.hash_table_entries.append(_HashTableEntry())
+            self.offset_tables.append([])
 
         try:
             codepoint_file = open(codepoint_path, "r")
@@ -145,16 +173,19 @@ class FontGen:
 
             self.num_glyphs += 1
 
+            glyph = self._generate_glyph(codepoint)
+            self.glyph_entries.append(glyph)
+
             codepoint_hash = self._hash_function(codepoint)
 
             offset_entry = _OffsetTableEntry()
             offset_entry.codepoint = codepoint
+            offset_entry.offset = self.total_glyph_size_words
 
-            offset_entry.glyph_entries.append(self._generate_glyph(codepoint))
+            self.total_glyph_size_words += int(glyph.size() / 4)
 
             self.hash_table_entries[codepoint_hash].hash_value = codepoint_hash
-            self.hash_table_entries[codepoint_hash].offset_entries.append(
-                offset_entry)
+            self.offset_tables[codepoint_hash].append(offset_entry)
 
         self._generate_hash_table_offsets()
 
@@ -181,7 +212,14 @@ class FontGen:
     def _generate_hash_table_offsets(self):
 
         for idx, entry in enumerate(self.hash_table_entries):
-            print(f"{idx}: {entry.hash_value}")
+            entry.offset_table_size = len(self.offset_tables[idx])
+
+            if len(self.offset_tables[idx]):
+                entry.offset = self.offset_table_count
+            else:
+                entry.offset = 0
+
+            self.offset_table_count += len(self.offset_tables[idx])
 
     def _write_output(self):
 
@@ -190,6 +228,22 @@ class FontGen:
         except Exception as e:
             logger.fatal("Unable to create output file.")
             raise e
+
+        self.font_info.max_height = self.max_height
+        self.font_info.num_glyphs = self.num_glyphs
+        self.font_info.hash_table_size = kHASH_TABLE_SIZE
+
+        file.write(self.font_info.to_bytes())
+
+        for hash_entry in self.hash_table_entries:
+            file.write(hash_entry.to_bytes())
+
+        for offset_table in self.offset_tables:
+            for entry in offset_table:
+                file.write(entry.to_bytes())
+
+        for glyph in self.glyph_entries:
+            file.write(glyph.to_bytes())
 
 
 class FontGenCLI:
