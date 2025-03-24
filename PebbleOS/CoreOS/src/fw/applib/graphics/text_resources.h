@@ -57,7 +57,7 @@ typedef struct __attribute__((packed)) GlyphData
  * Function Prototypes
  *****************************************************************************/
 
-const GlyphData *text_resources_get_glyph(uint16_t codepoint, FontMetaData *font);
+const GlyphData *text_resources_get_glyph(uint16_t codepoint, FontMetaData const *font);
 
 #ifdef __cplusplus
 }

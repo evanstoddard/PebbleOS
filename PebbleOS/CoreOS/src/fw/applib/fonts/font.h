@@ -52,6 +52,8 @@ typedef struct __attribute__((packed)) FontHashTableEntry
     uint16_t offset;
 } FontHashTableEntry;
 
+typedef FontMetaData GFont;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
