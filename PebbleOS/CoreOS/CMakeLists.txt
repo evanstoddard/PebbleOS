@@ -19,6 +19,7 @@ target_sources(app PRIVATE
     src/fw/applib/ui/layer.c
     src/fw/applib/ui/progress_layer.c
     src/fw/applib/graphics/text_resources.c
+    src/fw/applib/graphics/text.c
     src/out.c
 )
 

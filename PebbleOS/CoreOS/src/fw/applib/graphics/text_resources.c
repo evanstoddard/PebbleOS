@@ -82,7 +82,7 @@ const GlyphData *prv_find_glyph_in_table(const FontMetaData *font, uint16_t tabl
  * Functions
  *****************************************************************************/
 
-const GlyphData *text_resources_get_glyph(uint16_t codepoint, FontMetaData *font)
+const GlyphData *text_resources_get_glyph(uint16_t codepoint, FontMetaData const *font)
 {
     uint8_t hash = prv_hash_function(codepoint);
     uint8_t *hash_table = (uint8_t *)font + sizeof(FontMetaData);

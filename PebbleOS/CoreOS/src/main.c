@@ -18,6 +18,7 @@
 #include "graphics/framebuffer.h"
 #include "graphics/gcontext.h"
 #include "graphics/graphics.h"
+#include "graphics/text.h"
 #include "ui/progress_layer.h"
 
 #include "graphics/text_resources.h"
@@ -73,55 +74,8 @@ int main(void)
     framebuffer_init(&fb, &size);
 
     graphics_context_init(&ctx, &fb, GContextInitializationMode_System);
-    /**/
-    /* GRect progress_rect = GRect(1, 50, 142, 10); */
-    /* progress_layer_init(&progress_layer, &progress_rect); */
-    /**/
-    /* for (uint8_t i = 0; i <= 100; i++) */
-    /* { */
-    /*     progress_layer_set_progress(&progress_layer, i); */
-    /*     progress_layer.layer.update_proc((Layer *)&progress_layer, &ctx); */
-    /*     prv_flush_framebuffer(&fb); */
-    /*     k_msleep(20); */
-    /* } */
-    /**/
-    // return 0;
-    // for (uint16_t y = 0; y < DEVICE_DISPLAY_HEIGHT_PIXELS; y++)
-    // {
-    //     for (uint16_t x = 0; x < DEVICE_DISPLAY_WIDTH_PIXELS; x++)
-    //     {
-    //         graphics_draw_pixel(&ctx, GPoint(x, y));
-    //         prv_flush_framebuffer(&fb);
-    //     }
-    // }
-    // prv_flush_framebuffer(&fb);
 
-    const GlyphData *glyph = text_resources_get_glyph('D', (FontMetaData *)outfile_bin);
-
-    printk("Width: %u\nHeight: %u\nHorz. Adv: %d\nOffset Left: %d\nOffset Top:%d\n", glyph->header.width,
-           glyph->header.height, glyph->header.horizontal_advance, glyph->header.offset_left, glyph->header.offset_top);
-
-    uint16_t start_x = 10;
-    uint16_t start_y = 10;
-
-    uint8_t bytes_per_row = glyph->header.width / 8;
-    bytes_per_row += (bytes_per_row & 0x7) ? 1 : 0;
-
-    for (uint8_t y = 0; y < glyph->header.height; y++)
-    {
-        for (uint8_t x = 0; x < glyph->header.width; x++)
-        {
-            size_t data_idx = (y * bytes_per_row);
-            data_idx += (x / 8);
-
-            uint8_t bit_shift = 7 - (x & 0x7);
-
-            if (glyph->data[data_idx] & (1 << bit_shift))
-            {
-                graphics_draw_pixel(&ctx, GPoint(start_x + x, start_y + y));
-            }
-        }
-    }
+    graphics_draw_text(&ctx, "Hello Pebble! <3", (GFont *)&outfile_bin, GRect(10, 10, 134, 50), 0, 0, 0);
 
     prv_flush_framebuffer(&fb);
 
