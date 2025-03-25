@@ -19,9 +19,10 @@
 #include "graphics/gcontext.h"
 #include "graphics/graphics.h"
 #include "graphics/text.h"
-#include "ui/progress_layer.h"
-
 #include "graphics/text_resources.h"
+#include "graphics/types/gcolor.h"
+#include "ui/progress_layer.h"
+#include "ui/text_layer.h"
 #include "zephyr/sys/printk.h"
 
 /*****************************************************************************
@@ -42,6 +43,8 @@ static const struct device *const dev = DEVICE_DT_GET(DISPLAY_NODE);
 static ProgressLayer progress_layer = {0};
 
 extern char outfile_bin[];
+
+static TextLayer text_layer = {0};
 
 /*****************************************************************************
  * Prototypes
@@ -71,12 +74,18 @@ int main(void)
 {
     GSize size = GSize(DEVICE_DISPLAY_WIDTH_PIXELS, DEVICE_DISPLAY_HEIGHT_PIXELS);
 
+    GRect rect = GRect(0, 0, size.w, size.h);
+    text_layer_init(&text_layer, &rect);
+    text_layer.font.font = (FontMetaData *)&outfile_bin;
     framebuffer_init(&fb, &size);
 
     graphics_context_init(&ctx, &fb, GContextInitializationMode_System);
 
-    graphics_draw_text(&ctx, "Hello Pebble! <3", (GFont *)&outfile_bin, GRect(10, 10, 134, 50), 0, 0, 0);
+    text_layer_set_background_color(&text_layer, GColorWhite);
+    text_layer_set_text_color(&text_layer, GColorBlack);
 
+    text_layer_set_text(&text_layer, "Hello Pebble <3");
+    /* text_layer.layer.update_proc((Layer *)&text_layer, &ctx); */
     prv_flush_framebuffer(&fb);
 
     return 0;

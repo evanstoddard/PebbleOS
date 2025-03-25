@@ -18,6 +18,7 @@ target_sources(app PRIVATE
     src/fw/applib/graphics/graphics.c
     src/fw/applib/ui/layer.c
     src/fw/applib/ui/progress_layer.c
+    src/fw/applib/ui/text_layer.c
     src/fw/applib/graphics/text_resources.c
     src/fw/applib/graphics/text.c
     src/out.c
