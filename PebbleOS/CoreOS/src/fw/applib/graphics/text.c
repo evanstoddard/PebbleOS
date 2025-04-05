@@ -76,7 +76,7 @@ void prv_render_glyph(GContext *ctx, const GlyphData *glyph, GRect *cursor)
  * Functions
  *****************************************************************************/
 
-void graphics_draw_text(GContext *ctx, const char *text, GFont const *font, const GRect box,
+void graphics_draw_text(GContext *ctx, const char *text, GFont font, const GRect box,
                         const GTextOverflowMode overflow_mode, const GTextAlignment alignment,
                         GTextAttributes *text_attributes)
 {
