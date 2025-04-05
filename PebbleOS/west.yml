@@ -16,3 +16,4 @@ manifest:
         # strictly needed by the application.
         name-allowlist:
           - cmsis      # required by the ARM port
+          - hal_nordic
