@@ -166,10 +166,8 @@ class FontGen:
         # Generate glyphs
         for _codepoint in self.codepoints:
 
-            utf8_bytes = _codepoint.encode('utf-8')
-            utf8_ints = [int(byte) for byte in utf8_bytes]
-
-            codepoint = utf8_ints[0]
+            codepoint = int(_codepoint, 16)
+            print(f"Codepoint: {codepoint}")
 
             self.num_glyphs += 1
 
