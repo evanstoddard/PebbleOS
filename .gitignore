@@ -1,5 +1,5 @@
 /build*
-zephyr
+/zephyr
 modules
 .west
 .venv
