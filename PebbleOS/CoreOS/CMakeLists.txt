@@ -20,10 +20,14 @@ target_sources(app PRIVATE
     src/fw/applib/ui/progress_layer.c
     src/fw/applib/graphics/text_resources.c
     src/fw/applib/graphics/text.c
-    src/out.c
+    src/fw/resource/resource_storage.c
+    src/fw/resource/resource_storage_flash.c
+    src/fw/resource/resource_system_font.c
+    src/fw/drivers/display/drv_display.c
 )
 
 target_include_directories(app PRIVATE
-    src/device
-    src/fw/applib
+     src/device
+     src/fw/applib
+     src/fw
 )

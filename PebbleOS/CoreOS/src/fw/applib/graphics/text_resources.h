@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "fonts/font.h"
+#include "resource/resource_storage.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,12 @@ extern "C" {
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+#define FONT_HASH_TABLE_LENGTH 255U
+
+#define MAX_OFFSET_TABLE_LENGTH 128U
+
+#define CACHE_GLYPH_SIZE_BYTES 256U
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -50,14 +57,72 @@ typedef struct __attribute__((packed)) GlyphHeaderData
 typedef struct __attribute__((packed)) GlyphData
 {
     GlyphHeaderData header;
-    uint8_t data[];
+    uint8_t *data;
 } GlyphData;
+
+/**
+ * @typedef FontResource
+ * @brief [TODO:description]
+ *
+ */
+typedef struct FontResource
+{
+    ResourceStorageEntry resource_entry;
+    FontMetaData meta_data;
+} FontResource;
+
+/**
+ * @typedef FontInfo
+ * @brief [TODO:description]
+ *
+ */
+typedef struct FontInfo
+{
+    bool loaded;
+    FontResource resource;
+} FontInfo;
+
+/**
+ * @typedef FontCache
+ * @brief [TODO:description]
+ *
+ */
+typedef struct FontCache
+{
+    FontResource *resource;
+
+    int32_t offset_table_id;
+    uint32_t offset_table_length;
+
+    OffsetTableEntry offset_table_cache[MAX_OFFSET_TABLE_LENGTH];
+
+    uint8_t glyph_data_cache[CACHE_GLYPH_SIZE_BYTES];
+    GlyphData last_glyph;
+} FontCache;
 
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
 
-const GlyphData *text_resources_get_glyph(uint16_t codepoint, FontMetaData const *font);
+/**
+ * @brief [TODO:description]
+ *
+ * @param font_info [TODO:parameter]
+ * @param app_num [TODO:parameter]
+ * @param resource_id [TODO:parameter]
+ * @return [TODO:return]
+ */
+bool text_resources_init_font(FontInfo *font_info, uint32_t app_num, uint32_t resource_id);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param font_cache [TODO:parameter]
+ * @param font [TODO:parameter]
+ * @param codepoint [TODO:parameter]
+ * @return [TODO:return]
+ */
+const GlyphData *text_resources_get_glyph(FontCache *font_cache, GFont font, uint16_t codepoint);
 
 #ifdef __cplusplus
 }

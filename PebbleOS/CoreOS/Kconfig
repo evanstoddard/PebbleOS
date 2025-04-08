@@ -20,13 +20,9 @@ menu "Zephyr"
             bool "Target Blanca Device"
     endchoice
 
-    config DEVICE_DISPLAY_WIDTH_PIXELS
-        int "Device Display Width in Pixels"
-
-    config DEVICE_DISPLAY_HEIGHT_PIXELS
-        int "Device Display Height in Pixels"
-
 endmenu
 
 module = COREOS
 module-str = COREOS
+
+source "subsys/logging/Kconfig.template.log_config"

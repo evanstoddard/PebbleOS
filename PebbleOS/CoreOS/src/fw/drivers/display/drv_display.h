@@ -1,37 +1,25 @@
 /*
- * Copyright (C) Evan Stoddard
+ * Copyright (C) Ovyl
  */
 
 /**
- * @file pebble_device.h
+ * @file drv_display.h
  * @author Evan Stoddard
- * @brief Various defines for target platform
+ * @brief
  */
 
-#ifndef pebble_device_h
-#define pebble_device_h
+#ifndef drv_display_h
+#define drv_display_h
+
+#include "graphics/framebuffer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <zephyr/devicetree.h>
-
-#ifdef CONFIG_DEVICE_TINTIN
-#include "device_tintin.h"
-#elif CONFIG_DEVICE_BLANCA
-#include "device_blanca.h"
-#else
-#error "Device type not defined or supported."
-#endif
-
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
-
-#define DEVICE_DISPLAY_WIDTH_PIXELS DT_PROP(DT_NODELABEL(display), width)
-
-#define DEVICE_DISPLAY_HEIGHT_PIXELS DT_PROP(DT_NODELABEL(display), height)
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -41,7 +29,9 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
+void display_flush_framebuffer(FrameBuffer *fb);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* pebble_device_h */
+#endif /* drv_display_h */

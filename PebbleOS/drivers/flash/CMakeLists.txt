@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_PEBBLE_SIM_FLASH flash_sim)

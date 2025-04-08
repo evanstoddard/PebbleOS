@@ -15,6 +15,7 @@
 #include "gbitmap.h"
 #include "gcontext_types.h"
 #include "gtypes.h"
+#include "text_resources.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,7 @@ typedef struct GContext
     GBitmap bitmap;
     FrameBuffer *parent_framebuffer;
     GDrawState draw_state;
+    FontCache font_cache;
 } GContext;
 
 /*****************************************************************************

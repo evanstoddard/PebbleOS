@@ -186,7 +186,6 @@ class FontGen:
             self.offset_tables[codepoint_hash].append(offset_entry)
 
         self._generate_hash_table_offsets()
-
         self._write_output()
 
     def _generate_glyph(self, codepoint):
@@ -202,6 +201,8 @@ class FontGen:
         glyph_entry.offset_left = self.face.glyph.bitmap_left
         glyph_entry.offset_top = self.max_height - self.face.glyph.bitmap_top
 
+        print(f"{bitmap.pitch} {bitmap.width}")
+
         for byte in bitmap.buffer:
             glyph_entry.bitmap.append(byte)
 
@@ -216,6 +217,10 @@ class FontGen:
                 entry.offset = self.offset_table_count
             else:
                 entry.offset = 0
+
+            for offset_entry in self.offset_tables[idx]:
+                offset_entry.offset += int((self.num_glyphs *
+                                            _OffsetTableEntry().size())/4)
 
             self.offset_table_count += len(self.offset_tables[idx])
 

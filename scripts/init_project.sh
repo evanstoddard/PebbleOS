@@ -19,7 +19,7 @@ function initialize_workspace() {
 }
 
 function update_workspace() {
-    west update -f smart -n -o="--depth=1"
+    west update
 }
 
 function main() {

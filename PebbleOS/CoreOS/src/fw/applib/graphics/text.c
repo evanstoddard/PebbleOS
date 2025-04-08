@@ -15,6 +15,8 @@
 #include "graphics.h"
 #include "text_resources.h"
 
+#include <zephyr/kernel.h>
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -39,14 +41,10 @@ void prv_render_glyph(GContext *ctx, const GlyphData *glyph, GRect *cursor)
     uint8_t bytes_per_row = glyph->header.width >> 3;
     bytes_per_row += (glyph->header.width & 0x7) ? 1 : 0;
 
-    /*
-     * FIXME: Not sure if this is universally true, but I've seen freetype
-     * generate bitmaps where the width is < 1 byte add an extra padding byte,
-     * and the pitch is 2 bytes.  Pitch is not brought in to this but maybe it needs
-     * to be or the script needs to move the padding bytes to the end and condense
-     * the bitmap.
-     */
-    if (bytes_per_row == 1)
+    // The pitch of the bitmap returned from freetype will always be even and rounded up.
+    // So, if the width is 6 pixels, then the resulting bitmap with use the first 6 pixels of
+    // the first byte and then pad an extra byte, yielding a pitch of 2 bytes.
+    if (bytes_per_row % 2)
     {
         bytes_per_row++;
     }
@@ -63,8 +61,14 @@ void prv_render_glyph(GContext *ctx, const GlyphData *glyph, GRect *cursor)
             if (glyph->data[data_idx] & (1 << bit_shift))
             {
                 graphics_draw_pixel(ctx, GPoint(start_x + x, start_y + y));
+                printk("X");
+            }
+            else
+            {
+                printk(" ");
             }
         }
+        printk("\n");
     }
 
     cursor->origin.x = start_x + glyph->header.horizontal_advance;
@@ -80,6 +84,11 @@ void graphics_draw_text(GContext *ctx, const char *text, GFont font, const GRect
                         const GTextOverflowMode overflow_mode, const GTextAlignment alignment,
                         GTextAttributes *text_attributes)
 {
+    if (font == NULL)
+    {
+        return;
+    }
+
     GRect cursor = box;
 
     GlyphData *glyph = NULL;
@@ -88,7 +97,7 @@ void graphics_draw_text(GContext *ctx, const char *text, GFont font, const GRect
 
     for (size_t i = 0; i < len; i++)
     {
-        glyph = (GlyphData *)text_resources_get_glyph(text[i], font);
+        glyph = (GlyphData *)text_resources_get_glyph(&ctx->font_cache, font, text[i]);
         prv_render_glyph(ctx, glyph, &cursor);
     }
 }

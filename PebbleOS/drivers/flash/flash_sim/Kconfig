@@ -1,0 +1,2 @@
+config PEBBLE_SIM_FLASH
+    bool "Simulated flash."

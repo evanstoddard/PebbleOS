@@ -1,0 +1,16 @@
+/ {
+	   
+	
+};
+
+&mx25r64 {
+	partitions {
+  	compatible = "fixed-partitions";
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    system_resources: partition@0 {
+    	reg = <0x00000000 0x0000C000>;
+    };
+  };
+};

@@ -6,4 +6,28 @@
         height = <168>;
         width = <144>;
     };
+
+    ext_flash: flash@0 {
+        compatible = "pebble-sim-flash";
+        status = "okay";
+        filename = "external_flash.bin";
+        reg = < 0x0 0x800000 >;
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+	   
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            system_resources: partition@0 {
+                reg = <0x00000000 0x0000C000>;
+            };
+        };
+
+    };
+};
+
+&rtc {
+    status = "okay";
 };

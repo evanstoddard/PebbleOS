@@ -1,37 +1,29 @@
 /*
- * Copyright (C) Evan Stoddard
+ * Copyright (C) Ovyl
  */
 
 /**
- * @file pebble_device.h
+ * @file resource.h
  * @author Evan Stoddard
- * @brief Various defines for target platform
+ * @brief Module for fetching resources
  */
 
-#ifndef pebble_device_h
-#define pebble_device_h
+#ifndef resource_h
+#define resource_h
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "resource_storage.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <zephyr/devicetree.h>
-
-#ifdef CONFIG_DEVICE_TINTIN
-#include "device_tintin.h"
-#elif CONFIG_DEVICE_BLANCA
-#include "device_blanca.h"
-#else
-#error "Device type not defined or supported."
-#endif
-
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
-
-#define DEVICE_DISPLAY_WIDTH_PIXELS DT_PROP(DT_NODELABEL(display), width)
-
-#define DEVICE_DISPLAY_HEIGHT_PIXELS DT_PROP(DT_NODELABEL(display), height)
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -41,7 +33,21 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param app_num [TODO:parameter]
+ * @return [TODO:return]
+ */
+bool resource_init_app(uint32_t app_num);
+
+bool resource_is_valid(uint32_t app_num, uint32_t resource_id);
+
+size_t resource_size(uint32_t app_num, uint32_t resource_id);
+
+size_t resource_read_bytes(uint32_t app_num, uint32_t resource_id, void *dst, size_t max_bytes);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* pebble_device_h */
+#endif /* resource_h */

@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sim flash controller
+
+compatible: "pebble-sim-flash"
+
+include: base.yaml
+
+properties:
+  filename:
+    type: string
+    required: true

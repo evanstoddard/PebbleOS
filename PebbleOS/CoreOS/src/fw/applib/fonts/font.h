@@ -11,6 +11,7 @@
 #ifndef font_h
 #define font_h
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -52,7 +53,23 @@ typedef struct __attribute__((packed)) FontHashTableEntry
     uint16_t offset;
 } FontHashTableEntry;
 
-typedef FontMetaData *GFont;
+/**
+ * @typedef OffsetTableEntry
+ * @brief [TODO:description]
+ *
+ */
+typedef struct __attribute__((packed)) OffsetTableEntry
+{
+    uint16_t codepoint;
+    uint16_t offset_words;
+} OffsetTableEntry;
+
+struct FontInfo;
+
+/**
+ * @brief
+ */
+typedef struct FontInfo *GFont;
 
 /*****************************************************************************
  * Function Prototypes

@@ -1,47 +1,50 @@
 /*
- * Copyright (C) Evan Stoddard
+ * Copyright (C) Ovyl
  */
 
 /**
- * @file pebble_device.h
+ * @file flash_sim_posix_api.h
  * @author Evan Stoddard
- * @brief Various defines for target platform
+ * @brief
  */
 
-#ifndef pebble_device_h
-#define pebble_device_h
+#ifndef flash_sim_posix_api_h
+#define flash_sim_posix_api_h
+
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#include <zephyr/devicetree.h>
-
-#ifdef CONFIG_DEVICE_TINTIN
-#include "device_tintin.h"
-#elif CONFIG_DEVICE_BLANCA
-#include "device_blanca.h"
-#else
-#error "Device type not defined or supported."
 #endif
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
-#define DEVICE_DISPLAY_WIDTH_PIXELS DT_PROP(DT_NODELABEL(display), width)
-
-#define DEVICE_DISPLAY_HEIGHT_PIXELS DT_PROP(DT_NODELABEL(display), height)
-
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
+
+/**
+ * @typedef flash_sim_data_t
+ * @brief [TODO:description]
+ *
+ */
+typedef struct flash_sim_data_t
+{
+    char *file_path;
+    int fd;
+    size_t size_bytes;
+    void *mapped;
+} flash_sim_data_t;
 
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
 
+int flash_sim_init(flash_sim_data_t *data);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* pebble_device_h */
+#endif /* flash_sim_posix_api_h */
