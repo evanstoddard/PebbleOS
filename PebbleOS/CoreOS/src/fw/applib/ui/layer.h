@@ -32,6 +32,13 @@ extern "C" {
  */
 struct Layer;
 
+/**
+ * @class Window
+ * @brief [TODO:description]
+ *
+ */
+struct Window;
+
 typedef void (*LayerUpdateProc)(struct Layer *layer, GContext *ctx);
 
 /**
@@ -43,6 +50,11 @@ typedef struct Layer
 {
     GRect bounds;
     GRect frame;
+
+    struct layer *first_child;
+    struct layer *next_sibling;
+
+    struct Window *window;
 
     LayerUpdateProc update_proc;
 } Layer;
@@ -58,6 +70,22 @@ typedef struct Layer
  * @param frame Frame of layer
  */
 void layer_init(Layer *layer, GRect frame);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param layer [TODO:parameter]
+ * @return [TODO:return]
+ */
+struct Window *layer_get_window(Layer *layer);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param node [TODO:parameter]
+ * @param ctx [TODO:parameter]
+ */
+void layer_render_tree(Layer *node, GContext *ctx);
 
 #ifdef __cplusplus
 }

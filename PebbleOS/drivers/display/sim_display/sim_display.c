@@ -225,11 +225,11 @@ static int sim_display_write(const struct device *dev, const uint16_t x, const u
 
             if (val & SET_PIXEL(_x))
             {
-                SDL_SetRenderDrawColor(disp_data->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                SDL_SetRenderDrawColor(disp_data->renderer, 0x0, 0x0, 0x0, 0xFF);
             }
             else
             {
-                SDL_SetRenderDrawColor(disp_data->renderer, 0x0, 0x0, 0x0, 0xFF);
+                SDL_SetRenderDrawColor(disp_data->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             }
 
             SDL_RenderDrawPoint(disp_data->renderer, _x, _y);

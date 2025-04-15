@@ -18,6 +18,7 @@
 #include "graphics/text_resources.h"
 #include "resource/resource_storage.h"
 #include "resource/resource_system_font.h"
+#include "ui/window.h"
 
 /*****************************************************************************
  * Definitions
@@ -29,6 +30,8 @@
 
 static FrameBuffer fb = {0};
 static GContext ctx = {0};
+
+static Window window = {0};
 
 /*****************************************************************************
  * Prototypes
@@ -46,13 +49,9 @@ int main(void)
     framebuffer_init(&fb, &size);
     graphics_context_init(&ctx, &fb, GContextInitializationMode_App);
 
-    ctx.draw_state.text_color = GColorBlack;
+    window_init(&window, NULL);
 
-    GRect rect = GRect(10, 10, size.w - 10, 30);
-
-    GFont font = system_get_system_font(0);
-
-    graphics_draw_text(&ctx, "Hello Pebble! <3", font, rect, 0, 0, NULL);
+    window_render(&window, &ctx);
 
     display_flush_framebuffer(&fb);
 
