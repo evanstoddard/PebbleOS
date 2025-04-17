@@ -25,6 +25,9 @@ target_sources(app PRIVATE
     src/fw/resource/resource_storage_flash.c
     src/fw/resource/resource_system_font.c
     src/fw/drivers/display/drv_display.c
+    src/fw/applib/ui/scroll_layer.c
+    src/fw/applib/ui/menu_layer.c
+    src/fw/apps/launcher/launcher_app.c
 )
 
 target_include_directories(app PRIVATE

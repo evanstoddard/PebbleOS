@@ -20,6 +20,8 @@
 #include "resource/resource_system_font.h"
 #include "ui/window.h"
 
+#include "apps/launcher/launcher_app.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -30,8 +32,6 @@
 
 static FrameBuffer fb = {0};
 static GContext ctx = {0};
-
-static Window window = {0};
 
 /*****************************************************************************
  * Prototypes
@@ -49,9 +49,11 @@ int main(void)
     framebuffer_init(&fb, &size);
     graphics_context_init(&ctx, &fb, GContextInitializationMode_App);
 
-    window_init(&window, NULL);
+    launcher_app_main();
 
-    window_render(&window, &ctx);
+    Window *window = launcher_app_window();
+
+    window_render(window, &ctx);
 
     display_flush_framebuffer(&fb);
 
