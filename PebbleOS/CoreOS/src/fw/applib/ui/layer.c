@@ -116,7 +116,26 @@ void layer_render_tree(Layer *node, GContext *ctx)
         descend = true;
 
         node = prv_layer_tree_traverse_next(stack, 16, &current_depth, descend);
-
         ctx->draw_state = root_draw_state;
     }
+}
+
+void layer_add_child(Layer *parent, Layer *child)
+{
+    child->window = parent->window;
+
+    if (parent->first_child == NULL)
+    {
+        parent->first_child = child;
+        return;
+    }
+
+    Layer *node = parent->first_child;
+
+    while (node->next_sibling)
+    {
+        node = node->next_sibling;
+    }
+
+    node->next_sibling = child;
 }

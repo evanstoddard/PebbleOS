@@ -51,8 +51,8 @@ typedef struct Layer
     GRect bounds;
     GRect frame;
 
-    struct layer *first_child;
-    struct layer *next_sibling;
+    struct Layer *first_child;
+    struct Layer *next_sibling;
 
     struct Window *window;
 
@@ -86,6 +86,14 @@ struct Window *layer_get_window(Layer *layer);
  * @param ctx [TODO:parameter]
  */
 void layer_render_tree(Layer *node, GContext *ctx);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param parent [TODO:parameter]
+ * @param child [TODO:parameter]
+ */
+void layer_add_child(Layer *parent, Layer *child);
 
 #ifdef __cplusplus
 }
