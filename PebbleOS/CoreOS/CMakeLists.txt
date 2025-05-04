@@ -28,6 +28,7 @@ target_sources(app PRIVATE
     src/fw/applib/ui/scroll_layer.c
     src/fw/applib/ui/menu_layer.c
     src/fw/apps/launcher/launcher_app.c
+    src/fw/applib/ui/menu_iterator.c
 )
 
 target_include_directories(app PRIVATE
