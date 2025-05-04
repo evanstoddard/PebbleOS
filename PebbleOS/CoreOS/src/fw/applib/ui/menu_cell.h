@@ -45,8 +45,9 @@ typedef struct MenuIndex
  */
 typedef struct MenuCellSpan
 {
-    GSize size;
-    int separator_height;
+    int16_t y;
+    int16_t h;
+    int16_t separator_height;
     MenuIndex index;
 } MenuCellSpan;
 

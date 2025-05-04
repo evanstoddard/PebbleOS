@@ -57,6 +57,7 @@ typedef struct MenuIterator
     MenuCellSpan cursor;
     bool should_continue;
     MenuIteratorCallbacks callbacks;
+    int16_t cell_height;
 } MenuIterator;
 
 /*****************************************************************************

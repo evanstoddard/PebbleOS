@@ -45,6 +45,8 @@ static void prv_update_caches(MenuLayer *layer)
 {
     MenuIterator iterator = {0};
     menu_iterator_init(&iterator, layer);
+
+    menu_iterator_traverse_downward(&iterator);
 }
 
 /*****************************************************************************
