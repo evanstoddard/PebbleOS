@@ -54,6 +54,8 @@ typedef struct MenuLayer
  */
 void menu_layer_init(MenuLayer *layer, GRect frame);
 
+void menu_layer_reload_data(MenuLayer *layer);
+
 #ifdef __cplusplus
 }
 #endif

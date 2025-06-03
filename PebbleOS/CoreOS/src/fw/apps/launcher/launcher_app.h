@@ -33,6 +33,8 @@ void launcher_app_main(void);
 
 Window *launcher_app_window(void);
 
+void update_progress(uint8_t progress);
+
 #ifdef __cplusplus
 }
 #endif
