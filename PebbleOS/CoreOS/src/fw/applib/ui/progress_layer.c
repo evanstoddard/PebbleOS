@@ -32,7 +32,7 @@
  * @param layer Pointer to base layer
  * @param ctx Pointer to graphics context
  */
-void prv_update_layer(struct Layer *layer, GContext *ctx)
+static void prv_update_layer(struct Layer *layer, GContext *ctx)
 {
     ProgressLayer *_layer = (ProgressLayer *)layer;
 

@@ -19,6 +19,7 @@ target_sources(app PRIVATE
     src/fw/applib/ui/layer.c
     src/fw/applib/ui/window.c
     src/fw/applib/ui/progress_layer.c
+    src/fw/applib/ui/text_layer.c
     src/fw/applib/graphics/text_resources.c
     src/fw/applib/graphics/text.c
     src/fw/resource/resource_storage.c
@@ -29,6 +30,7 @@ target_sources(app PRIVATE
     src/fw/applib/ui/menu_layer.c
     src/fw/apps/launcher/launcher_app.c
     src/fw/applib/ui/menu_iterator.c
+    src/fw/applib/fonts/font.c
 )
 
 target_include_directories(app PRIVATE

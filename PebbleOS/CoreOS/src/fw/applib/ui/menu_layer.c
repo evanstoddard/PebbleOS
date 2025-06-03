@@ -59,3 +59,7 @@ void menu_layer_init(MenuLayer *layer, GRect frame)
 
     layer->scroll_layer.layer.update_proc = prv_update_proc;
 }
+
+void menu_layer_reload_data(MenuLayer *layer) {
+    prv_update_caches(layer);
+}
