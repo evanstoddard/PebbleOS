@@ -3,35 +3,36 @@
  */
 
 /**
- * @file main.c
+ * @file main_thread.h
  * @author Evan Stoddard
  * @brief
  */
 
-#include <zephyr/kernel.h>
+#ifndef main_thread_h
+#define main_thread_h
 
-#include "kernel/main_thread.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
 /*****************************************************************************
- * Variables
+ * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
 /*****************************************************************************
- * Private Functions
+ * Function Prototypes
  *****************************************************************************/
 
-/*****************************************************************************
- * Functions
- *****************************************************************************/
+/**
+ * @brief Initialize main (kernel) thread
+ */
+void main_thread_init(void);
 
-int main(void)
-{
-
-    main_thread_init();
-
-    return 0;
+#ifdef __cplusplus
 }
+#endif
+#endif /* main_thread_h */
