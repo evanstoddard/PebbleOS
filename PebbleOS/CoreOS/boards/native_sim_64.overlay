@@ -1,8 +1,12 @@
 
 
 / {
+    chosen {
+        zephyr,display = &display;
+    };
+
     display: display {
-        compatible = "pebble-sim-display";
+        compatible = "zephyr,sdl-dc";
         height = <168>;
         width = <144>;
     };
@@ -30,4 +34,8 @@
 
 &rtc {
     status = "okay";
+};
+
+&sdl_dc {
+    status = "disabled";
 };

@@ -17,3 +17,4 @@ manifest:
         name-allowlist:
           - cmsis      # required by the ARM port
           - hal_nordic
+          - lvgl
