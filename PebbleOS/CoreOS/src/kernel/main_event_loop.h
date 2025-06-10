@@ -3,34 +3,36 @@
  */
 
 /**
- * @file main.c
+ * @file main_event_loop.h
  * @author Evan Stoddard
  * @brief
  */
 
-#include <zephyr/kernel.h>
+#ifndef main_event_loop_h
+#define main_event_loop_h
 
-#include "kernel/main_thread.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
 /*****************************************************************************
- * Variables
+ * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
 /*****************************************************************************
- * Private Functions
+ * Function Prototypes
  *****************************************************************************/
 
-/*****************************************************************************
- * Functions
- *****************************************************************************/
+/**
+ * @brief Event loop serviced by main thread
+ */
+void main_event_loop(void);
 
-int main(void)
-{
-    main_thread_init();
-
-    return 0;
+#ifdef __cplusplus
 }
+#endif
+#endif /* main_event_loop_h */
