@@ -3,15 +3,13 @@
  */
 
 /**
- * @file drv_display.h
+ * @file system_thread.h
  * @author Evan Stoddard
- * @brief
+ * @brief System thread (Kernel Background)
  */
 
-#ifndef drv_display_h
-#define drv_display_h
-
-#include "graphics/framebuffer.h"
+#ifndef system_thread_h
+#define system_thread_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,9 +27,12 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
-void display_flush_framebuffer(FrameBuffer *fb);
+/**
+ * @brief Initialize System Thread
+ */
+void system_thread_init(void);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* drv_display_h */
+#endif /* system_thread_h */

@@ -79,6 +79,20 @@ PebbleThread pebble_thread_create_thread(PebbleThreadType type, size_t stack_siz
  */
 void pebble_thread_destroy_thread(PebbleThread thread);
 
+/**
+ * @brief Get handle to current running thread
+ *
+ * @return Handle to current thread
+ */
+PebbleThread pebble_thread_current_thread(void);
+
+/**
+ * @brief Get type of current thread
+ *
+ * @return Returns type of current thread
+ */
+PebbleThreadType pebble_thread_current_thread_type(void);
+
 #ifdef __cplusplus
 }
 #endif

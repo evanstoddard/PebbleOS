@@ -99,9 +99,37 @@ PebbleThread pebble_thread_create_thread(PebbleThreadType type, size_t stack_siz
         k_thread_create(&thread->thread, thread->stack, K_THREAD_STACK_LEN(thread->stack_size_bytes),
                         prv_thread_entry_point, thread->entry_point, NULL, NULL, thread->priority, 0, K_NO_WAIT);
 
+    thread->thread.custom_data = thread;
+
     return thread;
 }
 
 void pebble_thread_destroy_thread(PebbleThread thread)
 {
+}
+
+PebbleThread pebble_thread_current_thread(void)
+{
+    struct k_thread *current_thread = k_current_get();
+
+    // Zephyr also spins up threads for services like timers and drivers.  Must be able to handle these cases...
+    // These threads might also use the custom_data property so it is theoretically possible that custom_data might
+    // not be NULL and not point to a PebbleThread instance... might consider adding a magic value to the top of this?
+    // Valid but potentially expensive alternative is to maintain a linked list of instantiate threads and iterate
+    // through this list finding an instance with a matching thread ID.
+    if (current_thread->custom_data == NULL)
+    {
+        return NULL;
+    }
+
+    PebbleThread handle = (PebbleThread)current_thread->custom_data;
+
+    return handle;
+}
+
+PebbleThreadType pebble_thread_current_thread_type(void)
+{
+    struct PebbleThread *_thread = pebble_thread_current_thread();
+
+    return _thread->type;
 }

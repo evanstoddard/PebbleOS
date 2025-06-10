@@ -14,6 +14,9 @@
 
 #include "pebble_thread.h"
 
+#include "main_event_loop.h"
+#include "system_thread.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -40,8 +43,9 @@ static struct
 /**
  * @brief Initial setup of kernel
  */
-void prv_setup(void)
+static void prv_setup(void)
 {
+    system_thread_init();
 }
 
 /**
@@ -49,12 +53,14 @@ void prv_setup(void)
  *
  * @param args Unused
  */
-void prv_thread_entry(void *args)
+static void prv_thread_entry(void *args)
 {
     (void)args;
 
     prv_setup();
+
     LOG_INF("Main kernel thread initialized.");
+    main_event_loop();
 }
 
 /*****************************************************************************
