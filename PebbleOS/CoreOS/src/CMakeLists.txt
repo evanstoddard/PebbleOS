@@ -6,5 +6,6 @@ target_include_directories(app PRIVATE
 add_subdirectory(applib)
 add_subdirectory(flash_map)
 add_subdirectory(kernel)
+add_subdirectory(process_management)
 add_subdirectory(resource)
 
