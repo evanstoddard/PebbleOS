@@ -148,6 +148,7 @@ static bool prv_get_resource(uint32_t app_num, uint32_t resource_id, ResourceSto
     uint32_t payload_offset = sizeof(ResourceManifest) +
                               (sizeof(ResourceTableEntry) * prv_inst.system_manifest.num_resources) +
                               table_entry.offset;
+    (void)payload_offset;
 
     *entry = (ResourceStorageEntry){.offset = table_entry.offset,
                                     .id = table_entry.resource_id,
