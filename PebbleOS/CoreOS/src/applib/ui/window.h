@@ -30,9 +30,19 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
+typedef void (*WindowHandler)(struct Window *window);
+
+/**
+ * @typedef WindowHandlers
+ * @brief Window handlers
+ *
+ */
 typedef struct WindowHandlers
 {
-
+    WindowHandler load;
+    WindowHandler appear;
+    WindowHandler disappear;
+    WindowHandler unload;
 } WindowHandlers;
 
 /**
@@ -44,6 +54,8 @@ typedef struct Window
 {
     Layer layer;
     GColor background_color;
+
+    WindowHandlers window_handlers;
 
     bool is_render_schedule : 1;
     bool on_screen : 1;
