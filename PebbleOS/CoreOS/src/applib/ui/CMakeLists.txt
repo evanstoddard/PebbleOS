@@ -6,4 +6,5 @@ target_sources(app PRIVATE
   scroll_layer.c
   text_layer.c
   window.c
+  window_stack.c
 )
