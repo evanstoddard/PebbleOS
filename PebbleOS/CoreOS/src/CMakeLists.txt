@@ -9,4 +9,5 @@ add_subdirectory(kernel)
 add_subdirectory(process_management)
 add_subdirectory(process_state)
 add_subdirectory(resource)
+add_subdirectory(util)
 

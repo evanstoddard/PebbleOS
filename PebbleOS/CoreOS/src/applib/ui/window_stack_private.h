@@ -17,9 +17,9 @@ extern "C" {
 
 #include <stddef.h>
 
-#include <zephyr/sys/slist.h>
-
 #include "ui/window.h"
+
+#include "util/list.h"
 
 /*****************************************************************************
  * Definitions
@@ -38,8 +38,8 @@ extern "C" {
  */
 typedef struct WindowStackNode
 {
-    // This must be the first property
-    sys_snode_t node;
+    // Must be first property
+    ListNode node;
 
     Window *window;
 } WindowStackNode;
@@ -51,8 +51,8 @@ typedef struct WindowStackNode
  */
 typedef struct WindowStack
 {
-    sys_slist_t active_windows;
-    sys_slist_t removed_windows;
+    List active_windows;
+    List removed_windows;
 
     WindowStackNode *last_top_node;
 

@@ -107,6 +107,22 @@ void window_set_background_color(Window *window, GColor background_color);
  */
 void window_render(Window *window, GContext *ctx);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param window [TODO:parameter]
+ * @param on_screen [TODO:parameter]
+ * @param call_handlers [TODO:parameter]
+ */
+void window_set_on_screen(Window *window, bool on_screen, bool call_handlers);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param window [TODO:parameter]
+ */
+void window_schedule_render(Window *window);
+
 #ifdef __cplusplus
 }
 #endif
