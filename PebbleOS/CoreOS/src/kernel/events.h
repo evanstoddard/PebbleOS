@@ -110,6 +110,11 @@ typedef enum
     PEBBLE_NUM_EVENTS
 } PebbleEventType;
 
+typedef struct __attribute__((__packed__)) PebbleEvent
+{
+    PebbleEventType type : 8;
+} PebbleEvent;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/

@@ -3,46 +3,36 @@
  */
 
 /**
- * @file main_event_loop.c
+ * @file app.h
  * @author Evan Stoddard
  * @brief
  */
 
-#include "main_event_loop.h"
+#ifndef app_h
+#define app_h
 
-#include <stdbool.h>
-
-#include <zephyr/kernel.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
 /*****************************************************************************
- * Variables
+ * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
 /*****************************************************************************
- * Prototypes
+ * Function Prototypes
  *****************************************************************************/
 
 /**
- * @brief Common things that need to happen every event loop iteration
+ * @brief Application event loop, blocks until event received
  */
-static void prv_event_loop_upkeep(void)
-{
+void app_event_loop(void);
+
+#ifdef __cplusplus
 }
-
-/*****************************************************************************
- * Functions
- *****************************************************************************/
-
-void main_event_loop(void)
-{
-    while (true)
-    {
-        k_sleep(K_FOREVER);
-
-        prv_event_loop_upkeep();
-    }
-}
+#endif
+#endif /* app_h */

@@ -7,5 +7,6 @@ add_subdirectory(applib)
 add_subdirectory(flash_map)
 add_subdirectory(kernel)
 add_subdirectory(process_management)
+add_subdirectory(process_state)
 add_subdirectory(resource)
 

@@ -3,16 +3,16 @@
  */
 
 /**
- * @file main_event_loop.c
+ * @file app.c
  * @author Evan Stoddard
  * @brief
  */
 
-#include "main_event_loop.h"
-
-#include <stdbool.h>
+#include "app.h"
 
 #include <zephyr/kernel.h>
+
+#include "ui/window.h"
 
 /*****************************************************************************
  * Definitions
@@ -23,13 +23,41 @@
  *****************************************************************************/
 
 /*****************************************************************************
- * Prototypes
+ * Private Functions
  *****************************************************************************/
 
 /**
- * @brief Common things that need to happen every event loop iteration
+ * @brief Returns if provided window is scheduled for rendering
+ *
+ * @param window Pointer to window
+ * @return True if window has render scheduled
  */
-static void prv_event_loop_upkeep(void)
+static bool prv_window_render_scheduled(Window *window)
+{
+    if (window != NULL && window->is_render_schedule)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+static bool prv_app_render_scheduled(void)
+{
+    return false;
+}
+
+/**
+ * @brief Render current app and kick off event to kernel event loop
+ */
+static void prv_render_app(void)
+{
+}
+
+/**
+ * @brief Things that must occur every event loop iteration
+ */
+void prv_event_loop_upkeep(void)
 {
 }
 
@@ -37,7 +65,7 @@ static void prv_event_loop_upkeep(void)
  * Functions
  *****************************************************************************/
 
-void main_event_loop(void)
+void app_event_loop(void)
 {
     while (true)
     {
