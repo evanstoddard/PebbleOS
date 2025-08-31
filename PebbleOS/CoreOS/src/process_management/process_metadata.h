@@ -121,7 +121,7 @@ typedef struct ProcessMetadataBase
 
     //! Bits of the sdk_platform as they were stored in the binary, or 0 if undefined
     uint16_t stored_sdk_platform;
-} PebbleProcessMd;
+} ProcessMetadataBase;
 
 /*****************************************************************************
  * Function Prototypes

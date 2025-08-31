@@ -33,6 +33,7 @@ typedef struct AppState
 {
     FrameBuffer framebuffer;
     GContext graphics_context;
+    WindowStack window_stack;
 } AppState;
 
 /*****************************************************************************
@@ -59,6 +60,8 @@ void app_state_init(void)
 
     graphics_context_init(&prv_current_app_state.graphics_context, &prv_current_app_state.framebuffer,
                           GContextInitializationMode_App);
+
+    window_stack_init(&prv_current_app_state.window_stack);
 }
 
 void app_state_deinit(void)
@@ -73,4 +76,9 @@ FrameBuffer *app_state_get_framebuffer(void)
 GContext *app_state_get_graphics_context(void)
 {
     return &prv_current_app_state.graphics_context;
+}
+
+WindowStack *app_state_get_window_stack(void)
+{
+    return &prv_current_app_state.window_stack;
 }

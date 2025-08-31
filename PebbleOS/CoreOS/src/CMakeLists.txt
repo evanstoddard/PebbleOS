@@ -3,6 +3,7 @@ target_include_directories(app PRIVATE
   device
 )
 
+add_subdirectory(apps)
 add_subdirectory(applib)
 add_subdirectory(flash_map)
 add_subdirectory(kernel)

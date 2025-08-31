@@ -70,7 +70,7 @@ typedef struct PebbleThread *PebbleThread;
  * @return [TODO:return]
  */
 PebbleThread pebble_thread_create_thread(PebbleThreadType type, size_t stack_size, int32_t priority,
-                                         PebbleThreadEntryPoint entry_point);
+                                         PebbleThreadEntryPoint entry_point, void *args);
 
 /**
  * @brief [TODO:description]

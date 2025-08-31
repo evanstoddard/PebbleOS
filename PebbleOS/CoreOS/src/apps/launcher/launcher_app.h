@@ -13,6 +13,8 @@
 
 #include "ui/window.h"
 
+#include "process_management/process_metadata.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,11 +31,10 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
-void launcher_app_main(void);
-
-Window *launcher_app_window(void);
-
-void update_progress(uint8_t progress);
+/**
+ * @brief Get pointer to launcher process metadata
+ */
+const ProcessMetadataBase *launcher_app_process_metadata(void);
 
 #ifdef __cplusplus
 }

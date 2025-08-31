@@ -11,15 +11,13 @@
 #include "framebuffer.h"
 
 #include <string.h>
+
+#include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
-
-/**
- * @brief Some define
- */
-#define MY_DEFINE (12U)
 
 /**
  * @brief Defines bytes per row
@@ -85,4 +83,23 @@ bool framebuffer_is_dirty(FrameBuffer *fb)
 GSize framebuffer_get_size(FrameBuffer *fb)
 {
     return fb->size;
+}
+
+void framebuffer_flush(FrameBuffer *fb)
+{
+    static const struct device *disp = DEVICE_DT_GET(DT_NODELABEL(display));
+
+    if (fb->is_dirty == false)
+    {
+        return;
+    }
+
+    display_blanking_off(disp);
+
+    struct display_buffer_descriptor desc = {.buf_size = DEVICE_DISPLAY_HEIGHT_PIXELS * DEVICE_DISPLAY_WIDTH_PIXELS,
+                                             .height = fb->dirty_rect.size.h,
+                                             .width = DEVICE_DISPLAY_WIDTH_PIXELS,
+                                             .pitch = DEVICE_DISPLAY_WIDTH_PIXELS};
+
+    display_write(disp, 0, fb->dirty_rect.origin.y, &desc, fb->buffer);
 }

@@ -14,6 +14,8 @@
 
 #include "ui/window.h"
 
+#include "kernel/main_event_loop.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -52,6 +54,9 @@ static bool prv_app_render_scheduled(void)
  */
 static void prv_render_app(void)
 {
+    PebbleEvent event = {.type = PEBBLE_RENDER_READY_EVENT};
+
+    main_event_loop_queue_event(&event);
 }
 
 /**
@@ -67,6 +72,8 @@ void prv_event_loop_upkeep(void)
 
 void app_event_loop(void)
 {
+    prv_render_app();
+
     while (true)
     {
         k_sleep(K_FOREVER);

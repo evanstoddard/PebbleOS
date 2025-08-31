@@ -68,7 +68,7 @@ void prv_thread_entry_point(void *entry_point, void *thread_args, void *unused)
  *****************************************************************************/
 
 PebbleThread pebble_thread_create_thread(PebbleThreadType type, size_t stack_size, int32_t priority,
-                                         PebbleThreadEntryPoint entry_point)
+                                         PebbleThreadEntryPoint entry_point, void *args)
 {
     struct PebbleThread *thread = NULL;
 
@@ -97,7 +97,7 @@ PebbleThread pebble_thread_create_thread(PebbleThreadType type, size_t stack_siz
 
     thread->thread_id =
         k_thread_create(&thread->thread, thread->stack, K_THREAD_STACK_LEN(thread->stack_size_bytes),
-                        prv_thread_entry_point, thread->entry_point, NULL, NULL, thread->priority, 0, K_NO_WAIT);
+                        prv_thread_entry_point, thread->entry_point, args, NULL, thread->priority, 0, K_NO_WAIT);
 
     thread->thread.custom_data = thread;
 

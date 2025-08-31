@@ -17,6 +17,7 @@ extern "C" {
 
 #include "graphics/framebuffer.h"
 #include "graphics/gcontext.h"
+#include "ui/window_stack.h"
 
 /*****************************************************************************
  * Definitions
@@ -57,6 +58,8 @@ FrameBuffer *app_state_get_framebuffer(void);
  * @return Pointer to app's graphics context
  */
 GContext *app_state_get_graphics_context(void);
+
+WindowStack *app_state_get_window_stack(void);
 
 #ifdef __cplusplus
 }

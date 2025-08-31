@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -37,7 +39,7 @@
 void *applib_malloc(size_t size)
 {
     // TODO: Use k_heap and determine which heap to allocate memory from (e.g. app heap or system heap)
-    return malloc(size);
+    return k_malloc(size);
 }
 
 /**
@@ -66,5 +68,5 @@ void *applib_zalloc(size_t size)
  */
 void applib_free(void *ptr)
 {
-    free(ptr);
+    k_free(ptr);
 }

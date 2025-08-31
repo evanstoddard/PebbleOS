@@ -17,11 +17,20 @@
 #include "ui/text_layer.h"
 #include "ui/window.h"
 
+#include "app_state.h"
+#include "ui/window_stack.h"
+
 #include "resource/resource_system_font.h"
+
+#include <zephyr/logging/log.h>
+
+#include "app.h"
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+LOG_MODULE_REGISTER(launcher_app);
 
 /*****************************************************************************
  * Variables
@@ -51,11 +60,10 @@ static TextLayer prv_text_layer = {0};
  * Prototypes
  *****************************************************************************/
 
-/*****************************************************************************
- * Functions
- *****************************************************************************/
-
-void launcher_app_main(void)
+/**
+ * @brief App entry point
+ */
+static void prv_app_main(void)
 {
     static char pebble_os[] = "PebbleOS";
 
@@ -73,14 +81,26 @@ void launcher_app_main(void)
 
     layer_add_child((Layer *)&prv_window, (Layer *)&prv_text_layer);
     layer_add_child((Layer *)&prv_window, (Layer *)&prv_progress_layer);
+
+    window_stack_push(app_state_get_window_stack(), &prv_window, true);
+
+    LOG_INF("Launcher app initialized.");
+
+    app_event_loop();
 }
 
-Window *launcher_app_window(void)
-{
-    return &prv_window;
-}
+/*****************************************************************************
+ * Functions
+ *****************************************************************************/
 
-void update_progress(uint8_t progress)
+/*****************************************************************************
+ * Process Data
+ *****************************************************************************/
+
+static const ProcessMetadataBase prv_process_metadata = {
+    .is_unprivileged = false, .process_type = ProcessTypeApp, .main_func = prv_app_main};
+
+const ProcessMetadataBase *launcher_app_process_metadata(void)
 {
-    progress_layer_set_progress(&prv_progress_layer, progress);
+    return &prv_process_metadata;
 }

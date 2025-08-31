@@ -3,15 +3,16 @@
  */
 
 /**
- * @file main_event_loop.h
+ * @file app_manager.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef main_event_loop_h
-#define main_event_loop_h
+#ifndef app_manager_h
+#define app_manager_h
 
-#include "events.h"
+#include "process_metadata.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,23 +26,25 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
+/**
+ * @typedef AppLaunchConfig
+ * @brief App launch configuration
+ *
+ */
+typedef struct AppLaunchConfig
+{
+    const ProcessMetadataBase *md;
+    bool restart;    //!< Allows the current app to be restarted
+    bool forcefully; //!< Causes the current app to be forcefully closed
+} AppLaunchConfig;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
 
-/**
- * @brief Event loop serviced by main thread
- */
-void main_event_loop(void);
-
-/**
- * @brief [TODO:description]
- *
- * @param event [TODO:parameter]
- */
-void main_event_loop_queue_event(const PebbleEvent *event);
+int app_manager_start_app(const AppLaunchConfig *launch_config);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* main_event_loop_h */
+#endif /* app_manager_h */

@@ -121,6 +121,13 @@ bool framebuffer_is_dirty(FrameBuffer *fb);
  */
 GSize framebuffer_get_size(FrameBuffer *fb);
 
+/**
+ * @brief Flush framebuffer to display
+ *
+ * @param fb Pointer to frame buffer
+ */
+void framebuffer_flush(FrameBuffer *fb);
+
 #ifdef __cplusplus
 }
 #endif

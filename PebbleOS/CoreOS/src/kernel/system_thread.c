@@ -62,5 +62,5 @@ static void prv_thread_entry(void *args)
 void system_thread_init(void)
 {
     prv_inst.thread = pebble_thread_create_thread(PEBBLE_THREAD_TYPE_KERNEL_BACKGROUND, SYSTEM_THREAD_STACK_SIZE_BYTES,
-                                                  SYSTEM_THREAD_PRIORITY, prv_thread_entry);
+                                                  SYSTEM_THREAD_PRIORITY, prv_thread_entry, NULL);
 }
