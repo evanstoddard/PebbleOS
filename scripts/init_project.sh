@@ -13,7 +13,6 @@ function initialize_project() {
         west init -l ${g_PROJECT_DIR}
     fi
 
-    pip install -r ${g_ROOT_DIR}/zephyr/scripts/requirements.txt
 }
 
 function run_west_update() {
@@ -23,6 +22,8 @@ function run_west_update() {
     # Run the following west update command
     west update -f smart -n -o=--depth=1
     
+    pip install -r ${g_ROOT_DIR}/zephyr/scripts/requirements.txt
+
     popd
 }
 
