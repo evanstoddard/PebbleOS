@@ -8,6 +8,22 @@
 
 menu "Zephyr"
 source "Kconfig.zephyr"
+
+config KERNEL_MAIN_STACK_SIZE
+  int "Stack size for PebbleOS main kernel thread."
+  default 2048
+
+config KERNEL_MAIN_PRIORITY
+  int "Priority for PebbleOS main kernel thread."
+  default 5
+
+config KERNEL_BACKGROUND_STACK_SIZE
+  int "Stack size for PebbleOS background kernel thread."
+  default 2048
+
+config KERNEL_BACKGROUND_PRIORITY
+  int "Priority for PebbleOS background kernel thread."
+  default 5
 endmenu
 
 module = APP
