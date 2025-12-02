@@ -4,7 +4,7 @@
 
 /**
  * @file main.c
- * @brief 
+ * @brief
  */
 
 #include <zephyr/kernel.h>
@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
  *****************************************************************************/
 
 int main(void) {
-    LOG_DBG("Application started.");
-    
-    return 0;
+  LOG_DBG("Application started.");
+
+  return 0;
 }

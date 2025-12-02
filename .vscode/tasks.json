@@ -1,0 +1,9 @@
+{
+    "tasks": [
+        {
+            "label": "Flash",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/flash.sh"
+        }
+    ]
+}
