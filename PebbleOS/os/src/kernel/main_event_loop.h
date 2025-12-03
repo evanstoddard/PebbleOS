@@ -3,15 +3,13 @@
  */
 
 /**
- * @file kernel_background.h
+ * @file main_event_loop.h
  * @author Evan Stoddard
- * @brief Kernel background thread
+ * @brief
  */
 
-#ifndef kernel_background_h
-#define kernel_background_h
-
-#include "pebble_thread.h"
+#ifndef main_event_loop_h
+#define main_event_loop_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,22 +28,11 @@ extern "C" {
  *****************************************************************************/
 
 /**
- * @brief Initialize kernel background thread
- *
- * @return Status of kernel background thread initialization
- * @retval 0 Successfully initialized kernel background thread
+ * @brief Entry point for main event loop
  */
-int kernel_background_init(void);
-
-/**
- * @brief Get pointer to kernel background thread instance
- *
- * @return Pointer to kernel background thread
- * @retval NULL Kernel background thread not initialized
- */
-PebbleThread_t *kernel_background_thread(void);
+void main_event_loop(void);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* kernel_background_h */
+#endif /* main_event_loop_h */

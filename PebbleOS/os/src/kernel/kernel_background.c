@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(kernel_bg);
 K_KERNEL_STACK_DEFINE(prv_thread_stack, CONFIG_KERNEL_BACKGROUND_STACK_SIZE);
 
 static struct {
-  PebbleTask_t thread;
+  PebbleThread_t thread;
 
   bool initialized;
 } prv_inst;
@@ -47,8 +47,7 @@ static struct {
  */
 static void prv_thread_entry(void *arg) {
   while (true) {
-    LOG_INF("Kernel BG tick...");
-    k_msleep(1000);
+    k_sleep(K_FOREVER);
   }
 }
 
@@ -61,10 +60,10 @@ int kernel_background_init(void) {
     return -EALREADY;
   }
 
-  int ret = pebble_task_init(&prv_inst.thread, PebbleTask_KernelBackground,
-                             "Kernel BG", prv_thread_stack,
-                             CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
-                             prv_thread_entry, NULL);
+  int ret = pebble_thread_init(&prv_inst.thread, PebbleThread_KernelBackground,
+                               "Kernel BG", prv_thread_stack,
+                               CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
+                               prv_thread_entry, NULL);
 
   if (ret < 0) {
     LOG_ERR("Failed to initialize kernel background thread: %d", ret);
@@ -76,7 +75,7 @@ int kernel_background_init(void) {
   return 0;
 }
 
-PebbleTask_t *kernel_background_thread(void) {
+PebbleThread_t *kernel_background_thread(void) {
   if (prv_inst.initialized == false) {
     return NULL;
   }

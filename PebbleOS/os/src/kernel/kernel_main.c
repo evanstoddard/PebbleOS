@@ -18,7 +18,9 @@
 
 #include <zephyr/logging/log.h>
 
+#include "events.h"
 #include "kernel_background.h"
+#include "main_event_loop.h"
 
 /*****************************************************************************
  * Definitions
@@ -36,7 +38,7 @@ static K_KERNEL_STACK_DEFINE(prv_thread_stack, CONFIG_KERNEL_MAIN_STACK_SIZE);
  * @brief Private instance
  */
 static struct {
-  PebbleTask_t thread;
+  PebbleThread_t thread;
 
   bool initialized;
 } prv_inst;
@@ -49,6 +51,8 @@ static struct {
  * @brief Initialization and setup for rest of the system
  */
 static void prv_main_init(void) {
+
+  events_init();
 
   int ret = kernel_background_init();
 
@@ -65,11 +69,7 @@ static void prv_main_init(void) {
  */
 static void prv_thread_entry(void *arg) {
   prv_main_init();
-
-  while (true) {
-    LOG_INF("Kernel main tick...");
-    k_msleep(1000);
-  }
+  main_event_loop();
 }
 
 /*****************************************************************************
@@ -81,9 +81,9 @@ int kernel_main_init(void) {
     return -EALREADY;
   }
 
-  int ret = pebble_task_init(
-      &prv_inst.thread, PebbleTask_KernelMain, "Kernel Main", prv_thread_stack,
-      CONFIG_KERNEL_MAIN_STACK_SIZE, prv_thread_entry, NULL);
+  int ret = pebble_thread_init(
+      &prv_inst.thread, PebbleThread_KernelMain, "Kernel Main",
+      prv_thread_stack, CONFIG_KERNEL_MAIN_STACK_SIZE, prv_thread_entry, NULL);
 
   if (ret < 0) {
     LOG_ERR("Failed to initialize kernel main thread: %d", ret);
@@ -95,7 +95,7 @@ int kernel_main_init(void) {
   return 0;
 }
 
-PebbleTask_t *kernel_main_thread(void) {
+PebbleThread_t *kernel_main_thread(void) {
   if (prv_inst.initialized == false) {
     return NULL;
   }

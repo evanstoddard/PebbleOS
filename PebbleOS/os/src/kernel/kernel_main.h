@@ -11,7 +11,7 @@
 #ifndef kernel_main_h
 #define kernel_main_h
 
-#include "pebble_task.h"
+#include "pebble_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +42,7 @@ int kernel_main_init(void);
  * @return Pointer to kernel thread instance
  * @retval NULL Kernel thread not initialized
  */
-PebbleTask_t *kernel_main_thread(void);
+PebbleThread_t *kernel_main_thread(void);
 
 #ifdef __cplusplus
 }
