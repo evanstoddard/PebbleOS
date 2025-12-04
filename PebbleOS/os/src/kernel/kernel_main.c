@@ -22,6 +22,8 @@
 #include "kernel_background.h"
 #include "main_event_loop.h"
 
+#include "services/services.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -53,6 +55,9 @@ static struct {
 static void prv_main_init(void) {
 
   events_init();
+
+  services_early_init();
+  services_init();
 
   int ret = kernel_background_init();
 
