@@ -1,9 +1,9 @@
 / {
   fstab {
         compatible = "zephyr,fstab";
-        lfs: lfs {
+        pfs: pfs {
             compatible = "zephyr,fstab,littlefs";
-            mount-point = "/lfs1";
+            mount-point = "/pfs";
             partition = <&lfs_partition>;
             automount;
             read-size = <16>;
