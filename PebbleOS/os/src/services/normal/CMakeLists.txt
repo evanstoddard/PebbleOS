@@ -3,3 +3,4 @@ target_sources(app PRIVATE
 )
 
 add_subdirectory(filesystem)
+add_subdirectory(kvs_storage)
