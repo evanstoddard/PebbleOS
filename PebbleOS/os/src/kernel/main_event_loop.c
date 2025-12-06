@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(main_event_loop);
  *****************************************************************************/
 
 void main_event_loop(void) {
-  static PebbleEvent_t event = {0};
+  static PebbleEvent_t event = {};
 
   while (true) {
 

@@ -38,6 +38,8 @@
 
 #include <stddef.h>
 
+#include "kvs_types.h"
+
 #include "services/normal/filesystem/pfs.h"
 
 #ifdef __cplusplus
@@ -53,25 +55,6 @@ extern "C" {
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
-
-/**
- * @typedef KVS_File_t
- * @brief [TODO:description]
- *
- */
-typedef struct KVS_File_t {
-  const char *filename;
-
-  pfs_file_t file;
-
-  // Limits
-  size_t max_used_space_bytes;
-  size_t max_file_size_bytes;
-
-  // Usage
-  size_t used_space;
-  size_t dead_space_bytes;
-} KVS_File_t;
 
 /*****************************************************************************
  * Function Prototypes

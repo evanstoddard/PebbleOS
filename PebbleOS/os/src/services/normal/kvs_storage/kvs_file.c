@@ -13,29 +13,20 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/sys/crc.h>
 
+#include "kvs_iterator.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
 LOG_MODULE_REGISTER(kvs_file);
-
-/**
- * @brief Percentage of used space to add as padded bytes as a threshold to
- * begin garbage collection.  Percentage is most definitely not the best basis
- * to use for padding, but it was quick and dirty and provided some semblence of
- * scaling based on input size.
- */
-#define KVS_PADDING_PCT (20U)
-
-#define KVS_FILE_FILE_HEADER_MAGIC "KVS"
-
-#define KVS_FILE_RECORD_HEADER_MAGIC "RCD"
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -44,37 +35,6 @@ LOG_MODULE_REGISTER(kvs_file);
 /*****************************************************************************
  * Variables
  *****************************************************************************/
-
-/**
- * @typedef KVS_File_Header_t
- * @brief [TODO:description]
- *
- */
-typedef struct KVS_File_Header_t {
-  char magic[sizeof(KVS_FILE_FILE_HEADER_MAGIC)];
-
-  // NOTE: Explicitly defining size limits as 32-bit int for portablility.
-  uint32_t max_used_space_bytes;
-  uint32_t max_file_size_bytes;
-} __attribute__((__packed__)) KVS_File_Header_t;
-
-/**
- * @typedef KVS_Record_Header_t
- * @brief [TODO:description]
- *
- */
-typedef struct KVS_Record_Header_t {
-  char magic[sizeof(KVS_FILE_RECORD_HEADER_MAGIC)];
-
-  uint32_t key_size_bytes;
-  uint32_t value_size_bytes;
-
-  uint32_t flags;
-
-  uint8_t key_hash;
-
-  uint8_t unused[3];
-} __attribute__((__packed__)) KVS_Record_Header_t;
 
 /*****************************************************************************
  * Private Functions
@@ -87,7 +47,7 @@ typedef struct KVS_Record_Header_t {
  * @param key_len_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-uint8_t prv_hash_for_key(const void *key, const size_t key_len_bytes) {
+static uint8_t prv_hash_for_key(const void *key, const size_t key_len_bytes) {
   if (key == NULL || key_len_bytes == 0) {
     return 0;
   }
@@ -99,45 +59,48 @@ uint8_t prv_hash_for_key(const void *key, const size_t key_len_bytes) {
  * @brief [TODO:description]
  *
  * @param kvs_file [TODO:parameter]
- * @return [TODO:return]
- * @retval -EBADMSG Header is invalid
- * @retval Negative Other error, see error code value
- * @retval 0 Header valid
  */
-int prv_validate_file_header(KVS_File_t *kvs_file) {
+static void prv_update_stats(KVS_File_t *kvs_file) {}
 
-  KVS_File_Header_t header = {0};
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
+  kvs_file->max_file_size_bytes =
+      kvs_file->iterator.file_header.max_file_size_bytes;
+  kvs_file->max_used_space_bytes =
+      kvs_file->iterator.file_header.max_used_space_bytes;
 
-  int ret = pfs_seek(&kvs_file->file, 0, FS_SEEK_SET);
-
+  int ret = kvs_iterator_reset(&kvs_file->iterator);
   if (ret < 0) {
-    LOG_ERR("Failed to return to start of file: %d", ret);
-    return ret;
+    LOG_ERR("Failed to reset iterator: %d", ret);
+
+    return -EIO;
   }
 
-  ssize_t read_bytes = pfs_read(&kvs_file->file, &header, sizeof(header));
+  while (true) {
+    ret = kvs_iterator_next_record(&kvs_file->iterator);
 
-  if (read_bytes < 0) {
-    LOG_ERR("Failed to read KVS file header: %d", read_bytes);
-    return read_bytes;
+    if (ret <= 0) {
+      return ret;
+    }
+
+    prv_update_stats(kvs_file);
   }
-
-  if (read_bytes != sizeof(header)) {
-    LOG_ERR("Corrupt or incorrect KVS file header.");
-    return -EBADMSG;
-  }
-
-  if (memcmp(&header.magic, KVS_FILE_FILE_HEADER_MAGIC,
-             sizeof(KVS_FILE_FILE_HEADER_MAGIC)) != 0) {
-    LOG_ERR("Incorrect KVS header magic value.");
-    return -EBADMSG;
-  }
-
-  kvs_file->max_file_size_bytes = header.max_file_size_bytes;
-  kvs_file->max_used_space_bytes = header.max_used_space_bytes;
 
   return 0;
 }
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_repair_file(KVS_File_t *file) { return 0; }
 
 /*****************************************************************************
  * Functions
@@ -184,13 +147,32 @@ int kvs_file_open(KVS_File_t *kvs_file, const char *filename) {
     return ret;
   }
 
-  ret = prv_validate_file_header(kvs_file);
+  kvs_iterator_init(&kvs_file->iterator, &kvs_file->file);
 
+  ret = kvs_iterator_fetch_file_header(&kvs_file->iterator);
   if (ret < 0) {
     LOG_ERR("Failed to validate KVS file header: %d", ret);
 
     pfs_close(&kvs_file->file);
     return ret;
+  }
+
+  ret = prv_validate_kvs_file(kvs_file);
+  if (ret == -EIO) {
+    LOG_ERR("Failed to validate KVS file.");
+    return -EIO;
+  }
+
+  if (ret == -EBADMSG) {
+    LOG_WRN("Attempting to repair KVS file.");
+
+    ret = prv_repair_file(kvs_file);
+
+    if (ret < 0) {
+      LOG_ERR("Failed to repair KVS file: %d", ret);
+
+      return -EBADMSG;
+    }
   }
 
   return 0;
