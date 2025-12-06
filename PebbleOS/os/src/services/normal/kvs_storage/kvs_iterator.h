@@ -60,6 +60,29 @@ int kvs_iterator_fetch_file_header(KVS_Iterator_t *iterator);
  */
 int kvs_iterator_next_record(KVS_Iterator_t *iterator);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param key [TODO:parameter]
+ * @param key_len_bytes [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_iterator_mark_records_overwrite_begin(KVS_Iterator_t *iterator,
+                                              void *key, size_t key_len_bytes);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param key [TODO:parameter]
+ * @param key_len_bytes [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_iterator_mark_records_overwrite_complete(KVS_Iterator_t *iterator,
+                                                 void *key,
+                                                 size_t key_len_bytes);
+
 #ifdef __cplusplus
 }
 #endif

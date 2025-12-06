@@ -18,8 +18,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
-#include <zephyr/sys/crc.h>
-
 #include "kvs_iterator.h"
 
 /*****************************************************************************
@@ -39,21 +37,6 @@ LOG_MODULE_REGISTER(kvs_file);
 /*****************************************************************************
  * Private Functions
  *****************************************************************************/
-
-/**
- * @brief [TODO:description]
- *
- * @param key [TODO:parameter]
- * @param key_len_bytes [TODO:parameter]
- * @return [TODO:return]
- */
-static uint8_t prv_hash_for_key(const void *key, const size_t key_len_bytes) {
-  if (key == NULL || key_len_bytes == 0) {
-    return 0;
-  }
-
-  return crc8_rohc(0, key, key_len_bytes);
-}
 
 /**
  * @brief [TODO:description]
@@ -83,8 +66,13 @@ static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
 
   while (true) {
     ret = kvs_iterator_next_record(&kvs_file->iterator);
+    if (ret < 0) {
+      LOG_WRN("Invalid record: %d", ret);
+      return ret;
+    }
 
-    if (ret <= 0) {
+    if (ret == 0) {
+      LOG_INF("Found EOF Record.");
       return ret;
     }
 
@@ -217,6 +205,18 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
 
   if (ret != sizeof(header)) {
     LOG_ERR("Failed to write complete header to KVS File.");
+    return -EIO;
+  }
+
+  KVS_Record_Header_t record_header = {0};
+  memset(&record_header, 0xFF, sizeof(KVS_Record_Header_t));
+  memcpy(record_header.magic, KVS_FILE_RECORD_HEADER_MAGIC,
+         sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
+
+  ret = pfs_write(&kvs_file->file, &record_header, sizeof(KVS_Record_Header_t));
+
+  if (ret != sizeof(record_header)) {
+    LOG_ERR("Unexected return while writing KVS EOF Record: %d", ret);
     return -EIO;
   }
 

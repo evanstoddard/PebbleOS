@@ -19,6 +19,8 @@
 
 #include <zephyr/logging/log.h>
 
+#include <zephyr/sys/crc.h>
+
 #include "services/normal/filesystem/pfs.h"
 
 /*****************************************************************************
@@ -27,7 +29,8 @@
 
 LOG_MODULE_REGISTER(kvs_iterator);
 
-#define KEY_RECORD_KEY_SIZE_EOF_MASK 0x80
+#define KVS_OVERWRITE_IN_PROGRESS_MASK (0x80)
+#define KVS_OVERWRITE_COMPLETE_MASK (0x40)
 
 /*****************************************************************************
  * Variables
@@ -36,6 +39,22 @@ LOG_MODULE_REGISTER(kvs_iterator);
 /*****************************************************************************
  * Private Functions
  *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param key [TODO:parameter]
+ * @param key_len_bytes [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline uint8_t prv_hash_for_key(const void *key,
+                                       const size_t key_len_bytes) {
+  if (key == NULL || key_len_bytes == 0) {
+    return 0;
+  }
+
+  return crc8_rohc(0, key, key_len_bytes);
+}
 
 /**
  * @brief [TODO:description]
@@ -99,7 +118,7 @@ bool prv_record_header_valid(KVS_Record_Header_t *record_header,
  */
 off_t prv_next_record_offset(KVS_Iterator_t *iterator) {
   if (iterator->current_header_position == 0) {
-    return sizeof(KVS_Record_Header_t);
+    return sizeof(KVS_File_Header_t);
   }
 
   bool eof_header = false;
@@ -209,9 +228,9 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator) {
   }
 
   ssize_t read = pfs_read(iterator->file, &iterator->current_record_header,
-                          sizeof(KVS_File_Header_t));
+                          sizeof(KVS_Record_Header_t));
 
-  if (read != sizeof(KVS_File_Header_t)) {
+  if (read != sizeof(KVS_Record_Header_t)) {
     LOG_ERR("Unable to fetch complete KVS record header: %d", read);
     return -EBADMSG;
   }
@@ -232,4 +251,153 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator) {
 
   // Successfully read non-eof record header
   return 1;
+}
+
+int kvs_iterator_mark_records_overwrite_begin(KVS_Iterator_t *iterator,
+                                              void *key, size_t key_len_bytes) {
+  if (iterator == NULL || key == NULL || key_len_bytes == 0) {
+    return -EINVAL;
+  }
+
+  static uint8_t key_buf[KVS_MAX_KEY_LEN] = {0};
+
+  bool record_found = false;
+  uint8_t key_hash = prv_hash_for_key(key, key_len_bytes);
+
+  int ret = kvs_iterator_reset(iterator);
+  if (ret < 0) {
+    return ret;
+  }
+
+  do {
+    ret = kvs_iterator_next_record(iterator);
+
+    if (ret > 0) {
+      return ret;
+    }
+
+    if (ret == 0) {
+      break;
+    }
+
+    if (iterator->current_record_header.key_size_bytes != key_len_bytes &&
+        iterator->current_record_header.key_hash != key_hash) {
+      continue;
+    }
+
+    ssize_t read = pfs_read(iterator->file, key_buf, key_len_bytes);
+
+    if (read < 0) {
+      return read;
+    }
+
+    if (read != key_len_bytes) {
+      return -EBADMSG;
+    }
+
+    int cmp = memcmp(key, key_buf, key_len_bytes);
+
+    if (cmp != 0) {
+      continue;
+    }
+
+    record_found = true;
+
+    ret = pfs_seek(iterator->file, iterator->current_header_position,
+                   FS_SEEK_CUR);
+    if (ret < 0) {
+      return ret;
+    }
+
+    iterator->current_record_header.flags &= ~(KVS_OVERWRITE_IN_PROGRESS_MASK);
+    ssize_t written =
+        pfs_write(iterator->file, &iterator->current_record_header,
+                  sizeof(KVS_Record_Header_t));
+
+    if (written != sizeof(KVS_Record_Header_t)) {
+      return -EIO;
+    }
+
+  } while (ret > 0);
+
+  if (record_found == false) {
+    return -ENOENT;
+  }
+
+  return 0;
+}
+
+int kvs_iterator_mark_records_overwrite_complete(KVS_Iterator_t *iterator,
+                                                 void *key,
+                                                 size_t key_len_bytes) {
+  if (iterator == NULL || key == NULL || key_len_bytes == 0) {
+    return -EINVAL;
+  }
+
+  static uint8_t key_buf[KVS_MAX_KEY_LEN] = {0};
+
+  bool record_found = false;
+  uint8_t key_hash = prv_hash_for_key(key, key_len_bytes);
+
+  int ret = kvs_iterator_reset(iterator);
+  if (ret < 0) {
+    return ret;
+  }
+
+  do {
+    ret = kvs_iterator_next_record(iterator);
+
+    if (ret > 0) {
+      return ret;
+    }
+
+    if (ret == 0) {
+      break;
+    }
+
+    if (iterator->current_record_header.key_size_bytes != key_len_bytes &&
+        iterator->current_record_header.key_hash != key_hash) {
+      continue;
+    }
+
+    ssize_t read = pfs_read(iterator->file, key_buf, key_len_bytes);
+
+    if (read < 0) {
+      return read;
+    }
+
+    if (read != key_len_bytes) {
+      return -EBADMSG;
+    }
+
+    int cmp = memcmp(key, key_buf, key_len_bytes);
+
+    if (cmp != 0) {
+      continue;
+    }
+
+    record_found = true;
+
+    ret = pfs_seek(iterator->file, iterator->current_header_position,
+                   FS_SEEK_CUR);
+    if (ret < 0) {
+      return ret;
+    }
+
+    iterator->current_record_header.flags &= ~(KVS_OVERWRITE_COMPLETE_MASK);
+    ssize_t written =
+        pfs_write(iterator->file, &iterator->current_record_header,
+                  sizeof(KVS_Record_Header_t));
+
+    if (written != sizeof(KVS_Record_Header_t)) {
+      return -EIO;
+    }
+
+  } while (ret > 0);
+
+  if (record_found == false) {
+    return -ENOENT;
+  }
+
+  return 0;
 }

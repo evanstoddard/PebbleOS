@@ -35,6 +35,10 @@ extern "C" {
 
 #define KVS_FILE_RECORD_HEADER_MAGIC "RCD"
 
+#define KEY_RECORD_KEY_SIZE_EOF_MASK 0x80U
+
+#define KVS_MAX_KEY_LEN 0x7F
+
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
