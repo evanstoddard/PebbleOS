@@ -69,9 +69,45 @@ int pfs_open(pfs_file_t *file, const char *filename, fs_mode_t flags) {
   return ret;
 }
 
-ssize_t pfs_write(pfs_file_t *file, const void *src, size_t len);
+ssize_t pfs_write(pfs_file_t *file, const void *src, size_t len) {
+  if (file == NULL || src == NULL || len == 0) {
+    return -EINVAL;
+  }
 
-ssize_t pfs_read(pfs_file_t *file, void *dst, size_t len);
+  ssize_t ret = fs_write(file, src, len);
+
+  return ret;
+}
+
+ssize_t pfs_read(pfs_file_t *file, void *dst, size_t len) {
+  if (file == NULL || dst == NULL || len == 0) {
+    return -EINVAL;
+  }
+
+  ssize_t ret = fs_read(file, dst, len);
+
+  return ret;
+}
+
+int pfs_seek(pfs_file_t *file, off_t offset, int whence) {
+  if (file == NULL) {
+    return -EINVAL;
+  }
+
+  int ret = fs_seek(file, offset, whence);
+
+  return ret;
+}
+
+int pfs_truncate(pfs_file_t *file, off_t offset) {
+  if (file == NULL) {
+    return -EINVAL;
+  }
+
+  int ret = fs_truncate(file, offset);
+
+  return ret;
+}
 
 int pfs_close(pfs_file_t *file) {
   if (file == NULL) {
@@ -79,6 +115,16 @@ int pfs_close(pfs_file_t *file) {
   }
 
   int ret = fs_close(file);
+
+  return ret;
+}
+
+int pfs_sync(pfs_file_t *file) {
+  if (file == NULL) {
+    return -EINVAL;
+  }
+
+  int ret = fs_sync(file);
 
   return ret;
 }

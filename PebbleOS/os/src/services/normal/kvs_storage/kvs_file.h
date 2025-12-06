@@ -38,6 +38,8 @@
 
 #include <stddef.h>
 
+#include "services/normal/filesystem/pfs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,6 +61,8 @@ extern "C" {
  */
 typedef struct KVS_File_t {
   const char *filename;
+
+  pfs_file_t file;
 
   // Limits
   size_t max_used_space_bytes;

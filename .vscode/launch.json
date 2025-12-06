@@ -16,6 +16,6 @@
             "servertype": "jlink",
             "loadFiles": [],
             "preLaunchTask": "Flash"
-        },
+        }
     ]
 }

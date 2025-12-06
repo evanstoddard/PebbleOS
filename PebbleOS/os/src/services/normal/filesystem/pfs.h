@@ -71,7 +71,40 @@ ssize_t pfs_write(pfs_file_t *file, const void *src, size_t len);
  */
 ssize_t pfs_read(pfs_file_t *file, void *dst, size_t len);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @param offset [TODO:parameter]
+ * @param whence [TODO:parameter]
+ * @return [TODO:return]
+ */
+int pfs_seek(pfs_file_t *file, off_t offset, int whence);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @param offset [TODO:parameter]
+ * @return [TODO:return]
+ */
+int pfs_truncate(pfs_file_t *file, off_t offset);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @return [TODO:return]
+ */
 int pfs_close(pfs_file_t *file);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @return [TODO:return]
+ */
+int pfs_sync(pfs_file_t *file);
 
 #ifdef __cplusplus
 }
