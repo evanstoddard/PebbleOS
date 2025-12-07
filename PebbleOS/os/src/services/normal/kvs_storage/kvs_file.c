@@ -90,6 +90,7 @@ static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
  */
 static int prv_repair_file(KVS_File_t *file) { return 0; }
 
+
 /*****************************************************************************
  * Functions
  *****************************************************************************/

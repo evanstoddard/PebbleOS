@@ -87,6 +87,20 @@ typedef struct KVS_Iterator_t {
 } KVS_Iterator_t;
 
 /**
+ * @typedef KVS_Record_Filter_t
+ * @brief
+ *
+ */
+typedef struct KVS_Record_Filter_t {
+  const void *key;
+  size_t key_len;
+  uint8_t key_hash;
+
+  uint8_t flags;
+  bool exact_flag_match;
+} KVS_Record_Filter_t;
+
+/**
  * @typedef KVS_File_t
  * @brief [TODO:description]
  *
