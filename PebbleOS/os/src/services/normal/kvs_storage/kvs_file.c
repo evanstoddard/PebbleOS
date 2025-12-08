@@ -66,7 +66,7 @@ static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
   }
 
   while (true) {
-    ret = kvs_iterator_next_record(&kvs_file->iterator);
+  ret = kvs_iterator_next_record(&kvs_file->iterator);
     if (ret < 0) {
       LOG_WRN("Invalid record: %d", ret);
       return ret;
@@ -361,6 +361,24 @@ int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key,
       key_len_bytes == 0) {
     return -EINVAL;
   }
+  
+  KVS_Record_Filter_t filter = {
+    .key = key,
+    .key_len = key_len_bytes,
+    .flags = 0x0,
+    .exact_flag_match = true 
+  };
+  
+  KVS_Record_Header_t header = {0};
+  off_t header_offset = 0;
+
+  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter, &header_offset, &header);
+  
+  if (ret < 0) {
+    return ret;
+  }
+
+  *value_len_bytes = header.value_size_bytes; 
 
   return 0;
 }
@@ -370,6 +388,45 @@ int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
   if (kvs_file == NULL || key == NULL || dst == NULL || key_len_bytes == 0 ||
       dst_buf == 0) {
     return -EINVAL;
+  }
+  
+  KVS_Record_Filter_t filter = {
+    .key = key,
+    .key_len = key_len_bytes,
+    .flags = 0x0,
+    .exact_flag_match = true 
+  };
+  
+  KVS_Record_Header_t header = {0};
+  off_t header_offset = 0;
+
+  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter, &header_offset, &header);
+  
+  if (ret < 0) {
+    return ret;
+  }
+  
+  if (dst_buf < header.value_size_bytes) {
+    return -ENOMEM;
+  }
+  
+  off_t value_offset = header_offset + sizeof(KVS_Record_Header_t) + header.key_size_bytes;
+  ret = pfs_seek(&kvs_file->file, value_offset, FS_SEEK_SET);
+
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record value offset: %d", ret);
+    return ret;
+  }
+
+  ssize_t bytes = pfs_read(&kvs_file->file, dst, header.value_size_bytes);
+  if (bytes < 0) {
+    LOG_ERR("Failed to read record value: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != header.value_size_bytes) {
+    LOG_ERR("Unable to read complete value.  Potential record corruption.");
+    return -EIO;
   }
 
   return 0;
@@ -381,7 +438,29 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
     return -EINVAL;
   }
 
-  return 0;
+  KVS_Record_Filter_t filter = {
+    .key = key,
+    .key_len = key_len_bytes,
+    .flags = 0x0,
+    .exact_flag_match = false
+  };
+  
+  KVS_Record_Foreach_Callback_t callback = {
+    .callback = prv_mark_record_overwrite_pending,
+    .ctx = kvs_file
+  };
+
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
+  
+  if (ret < 0 && ret != -ENOENT) {
+    return ret;
+  }
+
+  callback.callback = prv_mark_record_overwrite_complete;
+
+  ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
+  
+  return ret;
 }
 
 /*****************************************************************************
