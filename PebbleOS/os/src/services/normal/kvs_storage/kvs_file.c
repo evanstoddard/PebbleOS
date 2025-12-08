@@ -19,6 +19,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "kvs_iterator.h"
+#include "services/normal/kvs_storage/kvs_types.h"
 
 /*****************************************************************************
  * Definitions
@@ -88,8 +89,39 @@ static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
  * @param file [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_repair_file(KVS_File_t *file) { return 0; }
+static int prv_repair_file(KVS_File_t *file) {
+  // TODO: All of this...
+  
+  return -ENOTSUP;
+}
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param record_header [TODO:parameter]
+ * @param ctx [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_mark_record_overwrite_pending(KVS_Iterator_t *iterator, off_t record_offset,
+                  KVS_Record_Header_t *record_header, void *ctx) {
+ return kvs_iterator_clear_flags(iterator, record_header, record_offset, KVS_RECORD_FLAG_OVERWRITE_PENDING);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param record_header [TODO:parameter]
+ * @param ctx [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_mark_record_overwrite_complete(KVS_Iterator_t *iterator, off_t record_offset,
+                  KVS_Record_Header_t *record_header, void *ctx) {
+  return kvs_iterator_clear_flags(iterator, record_header, record_offset, KVS_RECORD_FLAG_OVERWRITE_COMPLETE);
+}
 
 /*****************************************************************************
  * Functions
@@ -237,6 +269,86 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
   if (kvs_file == NULL || key == NULL || value == NULL || key_len_bytes == 0 ||
       value_length_bytes == 0) {
     return -EINVAL;
+  }
+  
+  KVS_Record_Filter_t filter = {
+    .key = key,
+    .key_len = key_len_bytes,
+    .flags = 0x0,
+    .exact_flag_match = true
+  };
+  
+  KVS_Record_Foreach_Callback_t callback = {
+    .callback = prv_mark_record_overwrite_pending,
+    .ctx = kvs_file
+  };
+
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
+  
+  if (ret < 0 && ret != -ENOENT) {
+    LOG_ERR("Failed to iterate through records: %d", ret);
+    return ret;
+  }
+ 
+  KVS_Record_Header_t record_header = {0};
+  kvs_init_record_header(&record_header);
+
+  // Don't clear MSB of key size as clearing that indicates the record is valid.  Clearing this at the end ensures that the file won't be corrupt if writing only partially completes.
+  record_header.key_size_bytes = KEY_RECORD_KEY_SIZE_EOF_MASK | (uint8_t)key_len_bytes;
+  record_header.key_hash = kvs_hash_for_key(key, key_len_bytes);
+  record_header.value_size_bytes = value_length_bytes;
+
+  ret = pfs_seek(&kvs_file->file, -((off_t)sizeof(KVS_Record_Header_t)), FS_SEEK_END);
+  if (ret < 0) {
+    LOG_ERR("Failed to move pointer to EOF record: %d", ret);
+    return ret;
+  }
+  
+  off_t record_offset = pfs_tell(&kvs_file->file);
+  if (record_offset < 0) {
+    LOG_ERR("Failed to find offset of EOF record: %ld", record_offset);
+    return record_offset;
+  }
+  
+  ret = pfs_write(&kvs_file->file, &record_header, sizeof(record_header));
+  if (ret < 0) {
+    LOG_ERR("Failed to write partial header: %d", ret);
+    return ret;
+  }
+
+  ret = pfs_write(&kvs_file->file, key, key_len_bytes);
+  if (ret < 0) {
+    LOG_ERR("Failed to write key: %d", ret);
+    return ret;
+  }
+  
+  ret = pfs_write(&kvs_file->file, value, value_length_bytes);
+  if (ret < 0) {
+    LOG_ERR("Failed to write value: %d", ret);
+    return ret;
+  }
+  
+  callback.callback = prv_mark_record_overwrite_complete;
+  filter.flags |= KVS_OVERWRITE_IN_PROGRESS_MASK;
+  ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
+  
+  if (ret < 0 && ret != -ENOENT) {
+    LOG_ERR("Failed to mark overwrite complete: %d", ret);
+    return ret;
+  }
+  
+  record_header.key_size_bytes &= ~(KEY_RECORD_KEY_SIZE_EOF_MASK);
+
+  ret = pfs_seek(&kvs_file->file, record_offset, FS_SEEK_SET);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to new record header: %d", ret);
+    return ret;
+  }
+
+  ret = pfs_write(&kvs_file->file, &record_header, sizeof(record_header));
+  if (ret < 0) {
+    LOG_ERR("Failed to mark new record as valid: %d", ret);
+    return ret;
   }
 
   return 0;

@@ -11,7 +11,11 @@
 #ifndef kvs_types_h
 #define kvs_types_h
 
+#include <errno.h>
 #include <stddef.h>
+#include <string.h>
+
+#include <zephyr/sys/crc.h>
 
 #include "services/normal/filesystem/pfs.h"
 
@@ -38,6 +42,10 @@ extern "C" {
 #define KEY_RECORD_KEY_SIZE_EOF_MASK 0x80U
 
 #define KVS_MAX_KEY_LEN 0x7F
+
+#define KVS_OVERWRITE_IN_PROGRESS_MASK (0x80)
+
+#define KVS_OVERWRITE_COMPLETE_MASK (0x40)
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -124,6 +132,44 @@ typedef struct KVS_File_t {
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
+
+/*****************************************************************************
+ * Static Inlined Functions
+ *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param record_header [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline int kvs_init_record_header(KVS_Record_Header_t *record_header) {
+  if (record_header == NULL) {
+    return -EINVAL;
+  }
+
+  memset(record_header, 0xFF, sizeof(KVS_Record_Header_t));
+  memcpy(record_header->magic, KVS_FILE_RECORD_HEADER_MAGIC,
+         sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
+
+  return 0;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param key [TODO:parameter]
+ * @param key_len_bytes [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline uint8_t kvs_hash_for_key(const void *key,
+                                       const size_t key_len_bytes) {
+  if (key == NULL || key_len_bytes == 0) {
+    return 0;
+  }
+
+  return crc8_rohc(0, key, key_len_bytes);
+}
 
 #ifdef __cplusplus
 }

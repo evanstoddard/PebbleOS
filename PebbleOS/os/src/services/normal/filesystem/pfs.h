@@ -106,6 +106,8 @@ int pfs_close(pfs_file_t *file);
  */
 int pfs_sync(pfs_file_t *file);
 
+off_t pfs_tell(pfs_file_t *file);
+
 #ifdef __cplusplus
 }
 #endif

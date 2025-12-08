@@ -23,6 +23,10 @@ extern "C" {
  * Definitions
  *****************************************************************************/
 
+#define KVS_RECORD_FLAG_OVERWRITE_PENDING 0x80
+
+#define KVS_RECORD_FLAG_OVERWRITE_COMPLETE 0x40
+
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
@@ -108,6 +112,19 @@ int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
                                  KVS_Record_Filter_t *filter,
                                  off_t *record_offset,
                                  KVS_Record_Header_t *record_header);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param record_header [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param flags [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_iterator_clear_flags(KVS_Iterator_t *iterator,
+                             KVS_Record_Header_t *record_header,
+                             off_t record_offset, uint8_t flags);
 
 #ifdef __cplusplus
 }

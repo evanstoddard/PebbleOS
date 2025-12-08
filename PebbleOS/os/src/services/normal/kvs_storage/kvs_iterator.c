@@ -19,8 +19,6 @@
 
 #include <zephyr/logging/log.h>
 
-#include <zephyr/sys/crc.h>
-
 #include "services/normal/filesystem/pfs.h"
 
 /*****************************************************************************
@@ -61,22 +59,6 @@ typedef struct KVS_Filter_Context_t {
 /*****************************************************************************
  * Private Functions
  *****************************************************************************/
-
-/**
- * @brief [TODO:description]
- *
- * @param key [TODO:parameter]
- * @param key_len_bytes [TODO:parameter]
- * @return [TODO:return]
- */
-static inline uint8_t prv_hash_for_key(const void *key,
-                                       const size_t key_len_bytes) {
-  if (key == NULL || key_len_bytes == 0) {
-    return 0;
-  }
-
-  return crc8_rohc(0, key, key_len_bytes);
-}
 
 /**
  * @brief [TODO:description]
@@ -315,7 +297,7 @@ static int prv_filtered_foreach_record(KVS_Iterator_t *iterator,
 
   // Generate hash for provided key
   if (filter->key != NULL) {
-    filter->key_hash = prv_hash_for_key(filter->key, filter->key_len);
+    filter->key_hash = kvs_hash_for_key(filter->key, filter->key_len);
   }
 
   int ret = kvs_iterator_foreach_record(iterator, &wrapped_callback);
