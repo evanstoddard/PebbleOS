@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 
 #include "services/normal/filesystem/pfs.h"
+#include "zephyr/fs/fs.h"
 
 /*****************************************************************************
  * Definitions
@@ -483,4 +484,34 @@ int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
   int ret = prv_filtered_foreach_record(iterator, filter, NULL, true);
 
   return ret;
+}
+
+int kvs_iterator_clear_flags(KVS_Iterator_t *iterator,
+                             KVS_Record_Header_t *record_header,
+                             off_t record_offset, uint8_t flags) {
+  if (iterator == NULL || record_header == NULL) {
+    return -EINVAL;
+  }
+
+  record_header->flags &= ~(flags);
+
+  int ret = pfs_seek(iterator->file, record_offset, FS_SEEK_SET);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record header offset: %d", ret);
+    return ret;
+  }
+
+  ssize_t bytes =
+      pfs_write(iterator->file, record_header, sizeof(KVS_Record_Header_t));
+  if (bytes < 0) {
+    LOG_ERR("Failed to update record header: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != sizeof(KVS_Record_Header_t)) {
+    LOG_ERR("Failed to write complete record header.");
+    return -EIO;
+  }
+
+  return 0;
 }

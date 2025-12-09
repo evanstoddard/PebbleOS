@@ -469,28 +469,104 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
 
 #ifdef CONFIG_SHELL
 
+static KVS_File_t prv_shell_file = {0};
+
+static bool prv_shell_file_open = false;
+
 static int prv_shell_open_file(const struct shell *sh, size_t argc,
                                char **argv) {
-  static KVS_File_t file = {0};
-
-  int ret = kvs_file_open(&file, argv[1]);
+  int ret = kvs_file_open(&prv_shell_file, argv[1]);
 
   if (ret < 0) {
     shell_error(sh, "Failed to open KVS file: %d", ret);
     return ret;
   }
+  
+  prv_shell_file_open = true;
 
   return 0;
 }
 
 static int prv_shell_create_file(const struct shell *sh, size_t argc,
                                  char **argv) {
-  static KVS_File_t file = {0};
-
-  int ret = kvs_file_create(&file, argv[1], atoi(argv[2]));
+  int ret = kvs_file_create(&prv_shell_file, argv[1], atoi(argv[2]));
 
   if (ret < 0) {
     shell_print(sh, "Failed to create KVS file: %d", ret);
+    return ret;
+  }
+
+  prv_shell_file_open = true;
+
+  return 0;
+}
+
+static int prv_shell_fetch_value(const struct shell *sh, size_t argc, char **argv) {
+  
+  if (prv_shell_file_open == false)  {
+    shell_warn(sh, "Open KVS file first.");
+    return -EIO;
+  }
+ 
+  char value_buf[256] = {0};
+
+  size_t value_size = 0;
+
+  int ret = kvs_file_get_value_len(&prv_shell_file, argv[1], strlen(argv[1]) + 1, &value_size);
+  if (ret == -ENOENT) {
+    shell_warn(sh, "Key not found.");
+    return -ENOENT;
+  }
+
+  if (ret < 0) {
+    shell_error(sh, "Error fetching record length: %d", ret);
+    return ret;
+  }
+  
+  ret = kvs_file_get_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1, value_buf, sizeof(value_buf));
+  if (ret < 0) {
+    shell_error(sh, "Failed to get record value: %d", ret);
+    return ret;
+  }
+
+  LOG_HEXDUMP_INF(value_buf, value_size, "Record value:");
+
+  return 0;
+}
+
+static int prv_shell_delete_value(const struct shell *sh, size_t argc, char **argv) {
+  
+  if (prv_shell_file_open == false)  {
+    shell_warn(sh, "Open KVS file first.");
+    return -EIO;
+  }
+  
+  int ret = kvs_file_delete_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1);
+
+  if (ret == -ENOENT) {
+    shell_warn(sh, "Key does not exist.");
+    return -ENOENT;
+  }
+
+  if (ret < 0) {
+    shell_error(sh, "Failed to delete record: %d", ret);
+    return ret;
+  }
+
+  return 0;
+}
+
+
+static int prv_shell_set_value(const struct shell *sh, size_t argc, char **argv) {
+  if (prv_shell_file_open == false)  {
+    shell_warn(sh, "Open KVS file first.");
+    return -EIO;
+  }
+  
+  int ret = kvs_file_set_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1, argv[2], strlen(argv[2]) + 1);
+
+  if (ret < 0) {
+    shell_error(sh, "Failed to set value: %d", ret);
     return ret;
   }
 
@@ -502,6 +578,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kvs,
                                              prv_shell_open_file, 2, 0),
                                SHELL_CMD_ARG(create, NULL, "Close open file.",
                                              prv_shell_create_file, 3, 0),
+                               SHELL_CMD_ARG(set, NULL, "Set value.", prv_shell_set_value, 3, 0),
+                               SHELL_CMD_ARG(get, NULL, "Get value.", prv_shell_fetch_value, 3, 0),
+                               SHELL_CMD_ARG(delete, NULL, "Delete value.", prv_shell_delete_value, 2, 0),
+
                                SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(kvs, &sub_kvs, "Key/Value Storage", NULL);

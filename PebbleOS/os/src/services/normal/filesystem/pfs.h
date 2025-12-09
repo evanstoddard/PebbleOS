@@ -106,6 +106,12 @@ int pfs_close(pfs_file_t *file);
  */
 int pfs_sync(pfs_file_t *file);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param file [TODO:parameter]
+ * @return [TODO:return]
+ */
 off_t pfs_tell(pfs_file_t *file);
 
 #ifdef __cplusplus

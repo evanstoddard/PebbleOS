@@ -129,6 +129,16 @@ int pfs_sync(pfs_file_t *file) {
   return ret;
 }
 
+off_t pfs_tell(pfs_file_t *file) {
+  if (file == NULL) {
+    return -EINVAL;
+  }
+
+  off_t off = fs_tell(file);
+
+  return off;
+}
+
 /*****************************************************************************
  * Shell Functions
  *****************************************************************************/
