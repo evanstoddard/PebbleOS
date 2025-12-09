@@ -57,6 +57,17 @@ typedef struct KVS_Filter_Context_t {
   off_t record_offset;
 } KVS_Filter_Context_t;
 
+/**
+ * @typedef KVS_First_Occurence_Context_t
+ * @brief I (Evan Stoddard) hate this, but I didn't fully think out the API and
+ * this was faster than refactoring every dumb decision I made.
+ *
+ */
+typedef struct KVS_First_Occurence_Context_t {
+  KVS_Record_Header_t *record_header;
+  off_t *record_offset;
+} KVS_First_Occurence_Context_t;
+
 /*****************************************************************************
  * Private Functions
  *****************************************************************************/
@@ -314,6 +325,28 @@ static int prv_filtered_foreach_record(KVS_Iterator_t *iterator,
   return 1;
 }
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param record_header [TODO:parameter]
+ * @param ctx [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_first_occurence_callback(KVS_Iterator_t *iterator,
+                                        off_t record_offset,
+                                        KVS_Record_Header_t *record_header,
+                                        void *ctx) {
+
+  KVS_First_Occurence_Context_t *_ctx = (KVS_First_Occurence_Context_t *)ctx;
+
+  memcpy(_ctx->record_header, record_header, sizeof(KVS_Record_Header_t));
+  *(_ctx->record_offset) = record_offset;
+
+  return 0;
+}
+
 /*****************************************************************************
  * Functions
  *****************************************************************************/
@@ -481,7 +514,13 @@ int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
     return -EINVAL;
   }
 
-  int ret = prv_filtered_foreach_record(iterator, filter, NULL, true);
+  KVS_First_Occurence_Context_t ctx = {.record_offset = record_offset,
+                                       .record_header = record_header};
+
+  KVS_Record_Foreach_Callback_t callback = {
+      .callback = prv_first_occurence_callback, .ctx = &ctx};
+
+  int ret = prv_filtered_foreach_record(iterator, filter, &callback, true);
 
   return ret;
 }
