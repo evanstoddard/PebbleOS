@@ -247,7 +247,7 @@ static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
 
   if (filter->exact_flag_match && (flag_mask == record_header->flags)) {
     record_match = true;
-  } else if (!filter->exact_flag_match && (flag_mask | record_header->flags)) {
+  } else if (!filter->exact_flag_match && (flag_mask & record_header->flags)) {
     record_match = true;
   }
 
