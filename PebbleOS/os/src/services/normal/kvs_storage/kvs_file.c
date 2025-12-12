@@ -128,6 +128,97 @@ static int prv_mark_record_overwrite_complete(
                                   KVS_RECORD_FLAG_OVERWRITE_COMPLETE);
 }
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @param key [TODO:parameter]
+ * @param key_len [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline int prv_mark_records_overwrite_pending(KVS_File_t *kvs_file,
+                                                     const void *key,
+                                                     const size_t key_len) {
+  KVS_Record_Filter_t filter = {
+      .key = key, .key_len = key_len, .flags = 0x0, .exact_flag_match = true};
+
+  KVS_Record_Foreach_Callback_t callback = {
+      .callback = prv_mark_record_overwrite_pending, .ctx = kvs_file};
+
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
+                                                 &callback);
+
+  if (ret < 0 && ret != -ENOENT) {
+    LOG_ERR("Failed to iterate through records: %d", ret);
+    return ret;
+  }
+
+  return 0;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @param key [TODO:parameter]
+ * @param key_len [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline int prv_mark_records_overwrite_complete(KVS_File_t *kvs_file,
+                                                      const void *key,
+                                                      const size_t key_len) {
+  KVS_Record_Filter_t filter = {
+      .key = key, .key_len = key_len, .flags = 0x0, .exact_flag_match = true};
+  filter.flags |= KVS_OVERWRITE_IN_PROGRESS_MASK;
+
+  KVS_Record_Foreach_Callback_t callback = {
+      .callback = prv_mark_record_overwrite_complete, .ctx = kvs_file};
+
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
+                                                 &callback);
+
+  if (ret < 0 && ret != -ENOENT) {
+    LOG_ERR("Failed to iterate through records: %d", ret);
+    return ret;
+  }
+
+  return 0;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param iterator [TODO:parameter]
+ * @return [TODO:return]
+ */
+static int prv_write_eof_record_header(KVS_Iterator_t *iterator) {
+  KVS_Record_Header_t header = {0};
+  kvs_init_record_header(&header);
+
+  // Move to end of file
+  int ret = pfs_seek(iterator->file, 0, FS_SEEK_END);
+  if (ret < 0) {
+    LOG_ERR("Failed to move pointer to EOF: %d", ret);
+    return ret;
+  }
+
+  off_t eof_offset = pfs_tell(iterator->file);
+  if (eof_offset < 0) {
+    LOG_ERR("Failed to determine EOF offset: %ld", eof_offset);
+    return eof_offset;
+  }
+
+  ret = pfs_truncate(iterator->file, eof_offset + sizeof(header));
+  if (ret < 0) {
+    LOG_ERR("Failed to extend KVS file: %d", ret);
+    return ret;
+  }
+
+  ret = pfs_write(iterator->file, &header, sizeof(header));
+
+  return ret;
+}
+
 /*****************************************************************************
  * Functions
  *****************************************************************************/
@@ -233,6 +324,13 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
   header.max_file_size_bytes = max_used_space_bytes;
   header.max_file_size_bytes += (max_used_space_bytes * 100) / KVS_PADDING_PCT;
 
+  ret = pfs_truncate(&kvs_file->file,
+                     sizeof(KVS_File_Header_t) + sizeof(KVS_Record_Header_t));
+  if (ret < 0) {
+    LOG_ERR("Failed to extend new KVS file: %d", ret);
+    return ret;
+  }
+
   ret = pfs_write(&kvs_file->file, &header, sizeof(header));
 
   if (ret < 0) {
@@ -272,22 +370,6 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
     return -EINVAL;
   }
 
-  KVS_Record_Filter_t filter = {.key = key,
-                                .key_len = key_len_bytes,
-                                .flags = 0x0,
-                                .exact_flag_match = true};
-
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_mark_record_overwrite_pending, .ctx = kvs_file};
-
-  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                                 &callback);
-
-  if (ret < 0 && ret != -ENOENT) {
-    LOG_ERR("Failed to iterate through records: %d", ret);
-    return ret;
-  }
-
   KVS_Record_Header_t record_header = {0};
   kvs_init_record_header(&record_header);
 
@@ -299,17 +381,40 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
   record_header.key_hash = kvs_hash_for_key(key, key_len_bytes);
   record_header.value_size_bytes = value_length_bytes;
 
-  ret = pfs_seek(&kvs_file->file, -((off_t)sizeof(KVS_Record_Header_t)),
-                 FS_SEEK_END);
+  int ret = prv_mark_records_overwrite_pending(kvs_file, key, key_len_bytes);
   if (ret < 0) {
-    LOG_ERR("Failed to move pointer to EOF record: %d", ret);
+    LOG_ERR("Failed to mark previous records as overwrite pending: %d");
     return ret;
   }
 
+  ret = pfs_seek(&kvs_file->file, 0, FS_SEEK_END);
+  if (ret < 0) {
+    LOG_ERR("Failed to move pointer to EOF: %d", ret);
+    return ret;
+  }
+
+  // Move file pointer to EOF record
   off_t record_offset = pfs_tell(&kvs_file->file);
+  record_offset -= sizeof(KVS_Record_Header_t);
+  LOG_INF("Pointer: %ld", record_offset);
+
   if (record_offset < 0) {
     LOG_ERR("Failed to find offset of EOF record: %ld", record_offset);
     return record_offset;
+  }
+
+  // Extend file to include new key and value
+  ret = pfs_truncate(&kvs_file->file,
+                     record_offset + key_len_bytes + value_length_bytes);
+  if (ret < 0) {
+    LOG_ERR("Failed to extend KVS file: %d", ret);
+    return ret;
+  }
+
+  ret = pfs_seek(&kvs_file->file, record_offset, FS_SEEK_SET);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record header: %d", ret);
+    return ret;
   }
 
   ret = pfs_write(&kvs_file->file, &record_header, sizeof(record_header));
@@ -330,13 +435,9 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
     return ret;
   }
 
-  callback.callback = prv_mark_record_overwrite_complete;
-  filter.flags |= KVS_OVERWRITE_IN_PROGRESS_MASK;
-  ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                             &callback);
-
-  if (ret < 0 && ret != -ENOENT) {
-    LOG_ERR("Failed to mark overwrite complete: %d", ret);
+  ret = prv_mark_records_overwrite_complete(kvs_file, key, key_len_bytes);
+  if (ret < 0) {
+    LOG_ERR("Failed to mark previous records as overwritten: %d", ret);
     return ret;
   }
 
@@ -350,16 +451,13 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
 
   ret = pfs_write(&kvs_file->file, &record_header, sizeof(record_header));
   if (ret < 0) {
-    LOG_ERR("Failed to mark new record as valid: %d", ret);
+    LOG_ERR("Failed to confirm latest record: %d", ret);
     return ret;
   }
 
-  // Initialize header as it will be the new EOF header
-  kvs_init_record_header(&record_header);
-
-  ret = pfs_write(&kvs_file->file, &record_header, sizeof(record_header));
+  ret = prv_write_eof_record_header(&kvs_file->iterator);
   if (ret < 0) {
-    LOG_ERR("Failed to write EOF header: %d", ret);
+    LOG_ERR("Failed to write EOF record header: %d", ret);
     return ret;
   }
 

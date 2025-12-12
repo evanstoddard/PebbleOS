@@ -234,6 +234,9 @@ static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
       return 1;
     }
 
+    pfs_seek(iterator->file, record_offset + sizeof(KVS_Record_Header_t),
+             FS_SEEK_SET);
+
     ssize_t bytes =
         pfs_read(iterator->file, key_buf, record_header->key_size_bytes);
 
