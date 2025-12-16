@@ -5,7 +5,7 @@
 /**
  * @file kvs_iterator.c
  * @author Evan Stoddard
- * @brief
+ * @brief Wow... this turned into a nightmare...
  */
 
 #include "kvs_iterator.h"

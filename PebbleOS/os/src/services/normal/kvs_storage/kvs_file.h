@@ -140,6 +140,43 @@ int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
 int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
                          const size_t key_len_bytes);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @param callback [TODO:parameter]
+ * @param ctx [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_file_foreach(KVS_File_t *kvs_file,
+                     KVS_Record_Foreach_Callback_t *callback, void *ctx);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param key_buf [TODO:parameter]
+ * @param buf_size [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
+                                       const off_t record_offset, void *key_buf,
+                                       size_t buf_size);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param kvs_file [TODO:parameter]
+ * @param record_offset [TODO:parameter]
+ * @param value_buf [TODO:parameter]
+ * @param buf_size [TODO:parameter]
+ * @return [TODO:return]
+ */
+int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file,
+                                         const off_t record_offset,
+                                         void *value_buf, size_t buf_size);
+
 #ifdef __cplusplus
 }
 #endif

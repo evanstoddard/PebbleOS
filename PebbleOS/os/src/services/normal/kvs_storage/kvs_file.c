@@ -8,6 +8,10 @@
  * @brief
  */
 
+/*
+ * NOTE: This also turned into a nightmare. I promise to do better...
+ */
+
 #include "kvs_file.h"
 
 #include <errno.h>
@@ -69,11 +73,6 @@ static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
     ret = kvs_iterator_next_record(&kvs_file->iterator);
     if (ret < 0) {
       LOG_WRN("Invalid record: %d", ret);
-      return ret;
-    }
-
-    if (ret == 0) {
-      LOG_INF("Found EOF Record.");
       return ret;
     }
 
@@ -576,6 +575,120 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
   ret = pfs_sync(&kvs_file->file);
 
   return ret;
+}
+
+int kvs_file_foreach(KVS_File_t *kvs_file,
+                     KVS_Record_Foreach_Callback_t *callback, void *ctx) {
+  if (kvs_file == NULL || callback == NULL) {
+    return -EINVAL;
+  }
+
+  KVS_Record_Filter_t filter = {.exact_flag_match = true,
+                                .flags = 0,
+                                .key = NULL,
+                                .key_hash = 0,
+                                .key_len = 0};
+
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
+                                                 callback);
+
+  return ret;
+}
+
+int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
+                                       const off_t record_offset, void *key_buf,
+                                       size_t buf_size) {
+  if (kvs_file == NULL || key_buf == NULL) {
+    return -EINVAL;
+  }
+
+  KVS_Record_Header_t header = {0};
+
+  int ret = pfs_seek(&kvs_file->file, record_offset, FS_SEEK_SET);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record header: %d", ret);
+    return ret;
+  }
+
+  ssize_t bytes = pfs_read(&kvs_file->file, &header, sizeof(header));
+  if (bytes < 0) {
+    LOG_ERR("Failed to read record header: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != sizeof(header)) {
+    LOG_ERR("Read partial record header.  Corrupt file?");
+    return -EIO;
+  }
+
+  if (buf_size < header.key_size_bytes) {
+    return -ENOMEM;
+  }
+
+  bytes = pfs_read(&kvs_file->file, key_buf, header.key_size_bytes);
+
+  if (bytes < 0) {
+    LOG_ERR("Failed to read record key: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != header.key_size_bytes) {
+    LOG_ERR("Failed to read entire key.  Corrupt file?");
+    return -EIO;
+  }
+
+  return 0;
+}
+
+int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file,
+                                         const off_t record_offset,
+                                         void *value_buf, size_t buf_size) {
+  if (kvs_file == NULL || value_buf == NULL) {
+    return -EINVAL;
+  }
+
+  KVS_Record_Header_t header = {0};
+
+  int ret = pfs_seek(&kvs_file->file, record_offset, FS_SEEK_SET);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record header: %d", ret);
+    return ret;
+  }
+
+  ssize_t bytes = pfs_read(&kvs_file->file, &header, sizeof(header));
+  if (bytes < 0) {
+    LOG_ERR("Failed to read record header: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != sizeof(header)) {
+    LOG_ERR("Read partial record header.  Corrupt file?");
+    return -EIO;
+  }
+
+  if (buf_size < header.value_size_bytes) {
+    return -ENOMEM;
+  }
+
+  ret = pfs_seek(&kvs_file->file, header.key_size_bytes, FS_SEEK_CUR);
+  if (ret < 0) {
+    LOG_ERR("Failed to move to record value: %d", ret);
+    return ret;
+  }
+
+  bytes = pfs_read(&kvs_file->file, value_buf, header.key_size_bytes);
+
+  if (bytes < 0) {
+    LOG_ERR("Failed to read record value: %d", bytes);
+    return bytes;
+  }
+
+  if (bytes != header.value_size_bytes) {
+    LOG_ERR("Failed to read entire value.  Corrupt file?");
+    return -EIO;
+  }
+
+  return 0;
 }
 
 /*****************************************************************************

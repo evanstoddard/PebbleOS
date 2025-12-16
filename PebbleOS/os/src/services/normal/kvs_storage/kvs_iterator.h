@@ -31,17 +31,6 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
-/**
- * @typedef KVS_Record_Foreach_Callback_t
- * @brief
- *
- */
-typedef struct KVS_Record_Foreach_Callback_t {
-  int (*callback)(KVS_Iterator_t *iterator, off_t record_offset,
-                  KVS_Record_Header_t *record_header, void *ctx);
-  void *ctx;
-} KVS_Record_Foreach_Callback_t;
-
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/

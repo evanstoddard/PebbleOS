@@ -129,6 +129,23 @@ typedef struct KVS_File_t {
   size_t dead_space_bytes;
 } KVS_File_t;
 
+/*
+ * TODO: This should really be refactored so it passes a compound type which
+ * contains the header, header offset, key offset, and value offset instead of
+ * breaking at all out separately.  One could argue it makes the API messy.
+ */
+
+/**
+ * @typedef KVS_Record_Foreach_Callback_t
+ * @brief
+ *
+ */
+typedef struct KVS_Record_Foreach_Callback_t {
+  int (*callback)(KVS_Iterator_t *iterator, off_t record_offset,
+                  KVS_Record_Header_t *record_header, void *ctx);
+  void *ctx;
+} KVS_Record_Foreach_Callback_t;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
