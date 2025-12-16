@@ -114,6 +114,14 @@ int pfs_sync(pfs_file_t *file);
  */
 off_t pfs_tell(pfs_file_t *file);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param filename [TODO:parameter]
+ * @return [TODO:return]
+ */
+int pfs_delete(const char *filename);
+
 #ifdef __cplusplus
 }
 #endif

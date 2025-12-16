@@ -49,6 +49,11 @@ config MAIN_EVENT_LOOP_TAKE_TIMEOUT_MS
   int "Maximum time to block waiting for event."
   default 1000
 
+# Unsure how I feel about this being a Kconfig option as changing it will break compatibility
+config APP_NAME_SIZE_BYTES
+  int "Maximum length of application name in bytes"
+  default 96
+
 endmenu
 
 module = APP

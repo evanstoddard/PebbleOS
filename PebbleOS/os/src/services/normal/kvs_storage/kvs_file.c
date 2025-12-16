@@ -383,7 +383,7 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
 
   int ret = prv_mark_records_overwrite_pending(kvs_file, key, key_len_bytes);
   if (ret < 0) {
-    LOG_ERR("Failed to mark previous records as overwrite pending: %d");
+    LOG_ERR("Failed to mark previous records as overwrite pending: %d", ret);
     return ret;
   }
 

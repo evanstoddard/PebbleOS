@@ -139,6 +139,15 @@ off_t pfs_tell(pfs_file_t *file) {
   return off;
 }
 
+int pfs_delete(const char *filename) {
+  if (filename == NULL) {
+    return -EINVAL;
+  }
+
+  int ret = fs_unlink(filename);
+
+  return ret;
+}
 /*****************************************************************************
  * Shell Functions
  *****************************************************************************/
