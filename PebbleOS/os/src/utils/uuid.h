@@ -11,7 +11,11 @@
 #ifndef uuid_h
 #define uuid_h
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +56,21 @@ typedef struct Uuid_t {
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param first [TODO:parameter]
+ * @param second [TODO:parameter]
+ * @return [TODO:return]
+ */
+static inline bool uuid_equal(Uuid_t *first, Uuid_t *second) {
+  if (first == NULL || second == NULL) {
+    return false;
+  }
+
+  return (memcmp(first, second, sizeof(Uuid_t)) == 0);
+}
 
 #ifdef __cplusplus
 }

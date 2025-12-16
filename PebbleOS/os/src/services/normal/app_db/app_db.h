@@ -55,11 +55,14 @@ typedef struct AppDBEntry_t {
 } __attribute__((__packed__)) AppDBEntry_t;
 
 /**
- * @brief
+ * @typedef AppDBEnumerateCallback_t
+ * @brief [TODO:description]
  *
  */
-typedef void (*AppDBEnumerateCallback_t)(AppDBEntry_t *entry, int32_t app_id,
-                                         void *ctx);
+typedef struct AppDBEnumerateCallback_t {
+  void (*callback)(AppDBEntry_t *entry, int32_t app_id, void *ctx);
+  void *ctx;
+} AppDBEnumerateCallback_t;
 
 /*****************************************************************************
  * Function Prototypes
@@ -104,7 +107,7 @@ int app_db_entry_for_uuid(Uuid_t *uuid, AppDBEntry_t *entry);
  * @param entry [TODO:parameter]
  * @return [TODO:return]
  */
-int app_db_entry_for_app_id(uint32_t app_id, AppDBEntry_t *entry);
+int app_db_entry_for_app_id(int32_t app_id, AppDBEntry_t *entry);
 
 /**
  * @brief [TODO:description]
@@ -120,16 +123,15 @@ int app_db_insert(AppDBEntry_t *entry);
  * @param app_id [TODO:parameter]
  * @return [TODO:return]
  */
-int app_db_delete(uint32_t app_id);
+int app_db_delete(int32_t app_id);
 
 /**
  * @brief [TODO:description]
  *
  * @param callback [TODO:parameter]
- * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-int app_db_enumerate(AppDBEnumerateCallback_t callback, void *ctx);
+int app_db_enumerate(AppDBEnumerateCallback_t *callback);
 
 #ifdef __cplusplus
 }
