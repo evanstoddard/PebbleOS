@@ -27,6 +27,13 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
+/**
+ * @brief [TODO:description]
+ *
+ * @return [TODO:return]
+ */
+int ble_ppogatt_service_init(void);
+
 #ifdef __cplusplus
 }
 #endif
