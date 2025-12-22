@@ -1,0 +1,2 @@
+add_subdirectory(pairing_service)
+add_subdirectory(ppogatt)

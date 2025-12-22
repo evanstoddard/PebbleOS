@@ -24,6 +24,9 @@
 
 #include "services/services.h"
 
+#include "ble/ble_advertising.h"
+#include "ble/ble_conn_mgr.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -58,6 +61,10 @@ static void prv_main_init(void) {
 
   services_early_init();
   services_init();
+
+  ble_conn_mgr_init();
+
+  ble_advertising_begin();
 
   int ret = kernel_background_init();
 
