@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 #include "ble_advertising.h"
+#include "services/pairing_service/ble_pairing_service.h"
 
 /*****************************************************************************
  * Definitions
@@ -56,6 +57,8 @@ int ble_conn_mgr_init(void) {
     LOG_ERR("Failed to enable BLE: %d", ret);
     return ret;
   }
+
+  ble_pairing_service_init();
 
   return 0;
 }

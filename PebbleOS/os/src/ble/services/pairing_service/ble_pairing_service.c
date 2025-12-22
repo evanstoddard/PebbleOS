@@ -17,10 +17,12 @@
 #include <zephyr/logging/log.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 
 #include "ble/ble_uuid.h"
+#include "zephyr/bluetooth/conn.h"
 
 /*****************************************************************************
  * Definitions
@@ -31,6 +33,13 @@ LOG_MODULE_REGISTER(ble_pairing_service);
 /*****************************************************************************
  * Variables
  *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ */
+static struct {
+  bool initialized;
+} prv_inst;
 
 /*****************************************************************************
  * BLE Service Bindings
@@ -182,7 +191,26 @@ static ssize_t prv_on_read_conn_status(struct bt_conn *conn,
                                        const struct bt_gatt_attr *attr,
                                        void *buf, uint16_t len,
                                        uint16_t offset) {
-  return -ENOTSUP;
+  struct bt_conn_info conn_info = {0};
+  bt_conn_get_info(conn, &conn_info);
+
+  PPSConnectivityStatus_t status = {0};
+
+  status.ble_is_connected = true;
+
+  status.ble_is_bonded = bt_le_bond_exists(conn_info.id, conn_info.le.dst);
+
+  status.ble_is_encrypted = (conn_info.security.level > BT_SECURITY_L2);
+
+  LOG_INF("Writing connection status: \r\n"
+          "\tConnected: %u\r\n"
+          "\tBonded: %u\r\n"
+          "\tEncrpyted: %u\r\n",
+          status.ble_is_connected, status.ble_is_bonded,
+          status.ble_is_encrypted);
+
+  return bt_gatt_attr_read(conn, attr, buf, len, offset, &status,
+                           sizeof(status));
 }
 
 static ssize_t prv_on_read_trigger_pairing(struct bt_conn *conn,
@@ -196,7 +224,27 @@ static ssize_t prv_on_write_trigger_pairing(struct bt_conn *conn,
                                             const struct bt_gatt_attr *attr,
                                             const void *buf, uint16_t len,
                                             uint16_t offset, uint8_t flags) {
-  return -ENOTSUP;
+  if (len < 1) {
+    return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+  }
+
+  LOG_HEXDUMP_INF(buf, len, "Trigger Pairing Payload:");
+
+  uint8_t pairing_flags = ((uint8_t *)buf)[0];
+
+  struct bt_conn_info conn_info = {0};
+  bt_conn_get_info(conn, &conn_info);
+
+  bool no_sec_req = (pairing_flags & 0x02) != 0;
+  bool force_sec_req = (pairing_flags & 0x04) != 0;
+
+  // Set security level to require encryption if needed
+  if ((!no_sec_req && conn_info.security.level < BT_SECURITY_L2) ||
+      force_sec_req) {
+    bt_conn_set_security(conn, BT_SECURITY_L2);
+  }
+
+  return len;
 }
 
 static ssize_t prv_on_read_conn_params(struct bt_conn *conn,
@@ -210,7 +258,10 @@ static ssize_t prv_on_write_conn_params(struct bt_conn *conn,
                                         const struct bt_gatt_attr *attr,
                                         const void *buf, uint16_t len,
                                         uint16_t offset, uint8_t flags) {
-  return -ENOTSUP;
+  LOG_HEXDUMP_INF(buf, len, "Write Conn Params:");
+
+  // TODO: Set params
+  return len;
 }
 
 static void prv_on_conn_status_ccc_changed(const struct bt_gatt_attr *attr,
@@ -219,6 +270,31 @@ static void prv_on_conn_status_ccc_changed(const struct bt_gatt_attr *attr,
 static void prv_on_conn_params_ccc_changed(const struct bt_gatt_attr *attr,
                                            uint16_t value) {}
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param conn [TODO:parameter]
+ * @param bonded [TODO:parameter]
+ */
+static void prv_on_pairing_complete(struct bt_conn *conn, bool bonded) {
+  LOG_INF("Pairing complete!  Bonded: %s", bonded ? "true" : "false");
+}
+
 /*****************************************************************************
  * Functions
  *****************************************************************************/
+
+int ble_pairing_service_init(void) {
+  if (prv_inst.initialized == true) {
+    return -EALREADY;
+  }
+
+  static struct bt_conn_auth_info_cb auth_cb = {.pairing_complete =
+                                                    prv_on_pairing_complete};
+
+  bt_conn_auth_info_cb_register(&auth_cb);
+
+  prv_inst.initialized = true;
+
+  return 0;
+}
