@@ -39,6 +39,8 @@ LOG_MODULE_REGISTER(ble_pairing_service);
  */
 static struct {
   bool initialized;
+
+  const struct bt_gatt_attr *conn_status_attr;
 } prv_inst;
 
 /*****************************************************************************
@@ -187,27 +189,60 @@ BT_GATT_SERVICE_DEFINE(
  * Private Functions
  *****************************************************************************/
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param conn [TODO:parameter]
+ * @param status [TODO:parameter]
+ */
+static void prv_populate_conn_status_struct(struct bt_conn *conn,
+                                            PPSConnectivityStatus_t *status) {
+  if (conn == NULL || status == NULL) {
+    return;
+  }
+
+  struct bt_conn_info conn_info = {0};
+  bt_conn_get_info(conn, &conn_info);
+
+  memset(status, 0, sizeof(PPSConnectivityStatus_t));
+
+  status->ble_is_connected = true;
+  status->ble_is_bonded = bt_le_bond_exists(conn_info.id, conn_info.le.dst);
+  status->ble_is_encrypted = (conn_info.security.level >= BT_SECURITY_L2);
+  status->supports_pinning_without_security_request = true;
+  status->is_reversed_ppogatt_enabled = true;
+
+  LOG_INF("Fetched connection status: \r\n"
+          "\tConnected: %u\r\n"
+          "\tBonded: %u\r\n"
+          "\tEncrpyted: %u\r\n",
+          status->ble_is_connected, status->ble_is_bonded,
+          status->ble_is_encrypted);
+}
+
+static void prv_notify_conn_status(struct bt_conn *conn) {
+  PPSConnectivityStatus_t status = {0};
+  prv_populate_conn_status_struct(conn, &status);
+
+  if (prv_inst.conn_status_attr == NULL) {
+    return;
+  }
+
+  int ret =
+      bt_gatt_notify(conn, prv_inst.conn_status_attr, &status, sizeof(status));
+
+  if (ret < 0) {
+    LOG_ERR("Failed to notify connection status update: %d", ret);
+  }
+}
+
 static ssize_t prv_on_read_conn_status(struct bt_conn *conn,
                                        const struct bt_gatt_attr *attr,
                                        void *buf, uint16_t len,
                                        uint16_t offset) {
-  struct bt_conn_info conn_info = {0};
-  bt_conn_get_info(conn, &conn_info);
-
   PPSConnectivityStatus_t status = {0};
 
-  status.ble_is_connected = true;
-
-  status.ble_is_bonded = bt_le_bond_exists(conn_info.id, conn_info.le.dst);
-
-  status.ble_is_encrypted = (conn_info.security.level > BT_SECURITY_L2);
-
-  LOG_INF("Writing connection status: \r\n"
-          "\tConnected: %u\r\n"
-          "\tBonded: %u\r\n"
-          "\tEncrpyted: %u\r\n",
-          status.ble_is_connected, status.ble_is_bonded,
-          status.ble_is_encrypted);
+  prv_populate_conn_status_struct(conn, &status);
 
   return bt_gatt_attr_read(conn, attr, buf, len, offset, &status,
                            sizeof(status));
@@ -217,6 +252,7 @@ static ssize_t prv_on_read_trigger_pairing(struct bt_conn *conn,
                                            const struct bt_gatt_attr *attr,
                                            void *buf, uint16_t len,
                                            uint16_t offset) {
+  LOG_INF("Requesting pairing...");
   return -ENOTSUP;
 }
 
@@ -241,7 +277,13 @@ static ssize_t prv_on_write_trigger_pairing(struct bt_conn *conn,
   // Set security level to require encryption if needed
   if ((!no_sec_req && conn_info.security.level < BT_SECURITY_L2) ||
       force_sec_req) {
-    bt_conn_set_security(conn, BT_SECURITY_L2);
+    int ret = bt_conn_set_security(conn, BT_SECURITY_L2);
+
+    if (ret < 0) {
+      LOG_ERR("Failed to update security level: %d", ret);
+    }
+
+    prv_notify_conn_status(conn);
   }
 
   return len;
@@ -251,6 +293,8 @@ static ssize_t prv_on_read_conn_params(struct bt_conn *conn,
                                        const struct bt_gatt_attr *attr,
                                        void *buf, uint16_t len,
                                        uint16_t offset) {
+  LOG_INF("Requesting connection params.");
+
   return -ENOTSUP;
 }
 
@@ -265,10 +309,19 @@ static ssize_t prv_on_write_conn_params(struct bt_conn *conn,
 }
 
 static void prv_on_conn_status_ccc_changed(const struct bt_gatt_attr *attr,
-                                           uint16_t value) {}
+                                           uint16_t value) {
+  LOG_INF("Connection status characteristic configuration changed: 0x%04X %p",
+          value, attr);
+  // TODO: We can actually index this directly, rather than saving a pointer to
+  // it... Probably cleaner and safer...
+  prv_inst.conn_status_attr = attr;
+}
 
 static void prv_on_conn_params_ccc_changed(const struct bt_gatt_attr *attr,
-                                           uint16_t value) {}
+                                           uint16_t value) {
+  LOG_INF("Connection params characteristic configuration changed: 0x%04X",
+          value);
+}
 
 /**
  * @brief [TODO:description]
@@ -278,7 +331,44 @@ static void prv_on_conn_params_ccc_changed(const struct bt_gatt_attr *attr,
  */
 static void prv_on_pairing_complete(struct bt_conn *conn, bool bonded) {
   LOG_INF("Pairing complete!  Bonded: %s", bonded ? "true" : "false");
+
+  prv_notify_conn_status(conn);
 }
+
+/**
+ * @brief Connection callback to request encryption for bonded devices
+ *
+ * @param conn Connection object
+ * @param err Connection error code (0 if successful)
+ */
+static void prv_on_connected(struct bt_conn *conn, uint8_t err) {
+  if (err) {
+    LOG_ERR("Connection failed: %d", err);
+    return;
+  }
+}
+
+/**
+ * @brief Security changed callback
+ *
+ * @param conn Connection object
+ * @param level New security level
+ * @param err Error code (0 if successful)
+ */
+static void prv_on_security_changed(struct bt_conn *conn, bt_security_t level,
+                                    enum bt_security_err err) {
+  if (err) {
+    LOG_ERR("Security change failed: level %d, err %d", level, err);
+  } else {
+    LOG_INF("Security changed: level %d", level);
+    prv_notify_conn_status(conn);
+  }
+}
+
+BT_CONN_CB_DEFINE(prv_conn_callbacks) = {
+    .connected = prv_on_connected,
+    .security_changed = prv_on_security_changed,
+};
 
 /*****************************************************************************
  * Functions

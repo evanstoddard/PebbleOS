@@ -118,6 +118,7 @@ BT_GATT_SERVICE_DEFINE(
 static ssize_t prv_on_meta_read(struct bt_conn *conn,
                                 const struct bt_gatt_attr *attr, void *buf,
                                 uint16_t len, uint16_t offset) {
+  LOG_INF("Requesting metadata.");
   return -ENOTSUP;
 }
 
@@ -125,11 +126,14 @@ static ssize_t prv_on_data_write(struct bt_conn *conn,
                                  const struct bt_gatt_attr *attr,
                                  const void *buf, uint16_t len, uint16_t offset,
                                  uint8_t flags) {
+  LOG_HEXDUMP_INF(buf, len, "Writing data:");
   return -ENOTSUP;
 }
 
 static void prv_on_data_ccc_changed(const struct bt_gatt_attr *attr,
-                                    uint16_t value) {}
+                                    uint16_t value) {
+  LOG_INF("Characteristic changed: 0x%04X", value);
+}
 
 /*****************************************************************************
  * Functions

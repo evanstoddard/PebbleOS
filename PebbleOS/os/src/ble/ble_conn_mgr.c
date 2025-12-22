@@ -17,6 +17,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
+#include <zephyr/settings/settings.h>
+
 #include "ble_advertising.h"
 #include "services/pairing_service/ble_pairing_service.h"
 
@@ -57,6 +59,10 @@ int ble_conn_mgr_init(void) {
     LOG_ERR("Failed to enable BLE: %d", ret);
     return ret;
   }
+
+  // TODO: This should be moved once zephyr settings fully integrated with
+  // Pebble OS
+  settings_load();
 
   ble_pairing_service_init();
 
