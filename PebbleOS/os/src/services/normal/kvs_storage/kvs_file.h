@@ -87,8 +87,7 @@ int kvs_file_open(KVS_File_t *kvs_file, const char *filename);
  * @param max_used_space_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
-                    size_t max_used_space_bytes);
+int kvs_file_create(KVS_File_t *kvs_file, const char *filename, size_t max_used_space_bytes);
 
 /**
  * @brief [TODO:description]
@@ -100,9 +99,8 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
  * @param value_length_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
-                      const size_t key_len_bytes, const void *value,
-                      const size_t value_length_bytes);
+int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes,
+                      const void *value, const size_t value_length_bytes);
 
 /**
  * @brief [TODO:description]
@@ -113,8 +111,8 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
  * @param value_len_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key,
-                           const size_t key_len_bytes, size_t *value_len_bytes);
+int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes,
+                           size_t *value_len_bytes);
 
 /**
  * @brief [TODO:description]
@@ -126,8 +124,8 @@ int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key,
  * @param dst_buf [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
-                      const size_t key_len_bytes, void *dst, size_t dst_buf);
+int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes, void *dst,
+                      size_t dst_buf);
 
 /**
  * @brief [TODO:description]
@@ -137,8 +135,7 @@ int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
  * @param key_len_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
-                         const size_t key_len_bytes);
+int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes);
 
 /**
  * @brief [TODO:description]
@@ -148,8 +145,7 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_foreach(KVS_File_t *kvs_file,
-                     KVS_Record_Foreach_Callback_t *callback, void *ctx);
+int kvs_file_foreach(KVS_File_t *kvs_file, KVS_Record_Foreach_Callback_t *callback, void *ctx);
 
 /**
  * @brief [TODO:description]
@@ -160,9 +156,8 @@ int kvs_file_foreach(KVS_File_t *kvs_file,
  * @param buf_size [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
-                                       const off_t record_offset, void *key_buf,
-                                       size_t buf_size);
+int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file, const off_t record_offset,
+                                       void *key_buf, size_t buf_size);
 
 /**
  * @brief [TODO:description]
@@ -173,8 +168,7 @@ int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
  * @param buf_size [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file,
-                                         const off_t record_offset,
+int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file, const off_t record_offset,
                                          void *value_buf, size_t buf_size);
 
 #ifdef __cplusplus

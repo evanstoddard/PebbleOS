@@ -141,8 +141,8 @@ typedef struct KVS_File_t {
  *
  */
 typedef struct KVS_Record_Foreach_Callback_t {
-  int (*callback)(KVS_Iterator_t *iterator, off_t record_offset,
-                  KVS_Record_Header_t *record_header, void *ctx);
+  int (*callback)(KVS_Iterator_t *iterator, off_t record_offset, KVS_Record_Header_t *record_header,
+                  void *ctx);
   void *ctx;
 } KVS_Record_Foreach_Callback_t;
 
@@ -166,8 +166,7 @@ static inline int kvs_init_record_header(KVS_Record_Header_t *record_header) {
   }
 
   memset(record_header, 0xFF, sizeof(KVS_Record_Header_t));
-  memcpy(record_header->magic, KVS_FILE_RECORD_HEADER_MAGIC,
-         sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
+  memcpy(record_header->magic, KVS_FILE_RECORD_HEADER_MAGIC, sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
 
   return 0;
 }
@@ -179,8 +178,7 @@ static inline int kvs_init_record_header(KVS_Record_Header_t *record_header) {
  * @param key_len_bytes [TODO:parameter]
  * @return [TODO:return]
  */
-static inline uint8_t kvs_hash_for_key(const void *key,
-                                       const size_t key_len_bytes) {
+static inline uint8_t kvs_hash_for_key(const void *key, const size_t key_len_bytes) {
   if (key == NULL || key_len_bytes == 0) {
     return 0;
   }

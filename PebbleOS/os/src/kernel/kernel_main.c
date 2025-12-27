@@ -56,7 +56,6 @@ static struct {
  * @brief Initialization and setup for rest of the system
  */
 static void prv_main_init(void) {
-
   events_init();
 
   services_early_init();
@@ -93,9 +92,9 @@ int kernel_main_init(void) {
     return -EALREADY;
   }
 
-  int ret = pebble_thread_init(
-      &prv_inst.thread, PebbleThread_KernelMain, "Kernel Main",
-      prv_thread_stack, CONFIG_KERNEL_MAIN_STACK_SIZE, prv_thread_entry, NULL);
+  int ret =
+      pebble_thread_init(&prv_inst.thread, PebbleThread_KernelMain, "Kernel Main", prv_thread_stack,
+                         CONFIG_KERNEL_MAIN_STACK_SIZE, prv_thread_entry, NULL);
 
   if (ret < 0) {
     LOG_ERR("Failed to initialize kernel main thread: %d", ret);

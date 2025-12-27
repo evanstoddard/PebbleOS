@@ -57,10 +57,8 @@ static void prv_update_stats(KVS_File_t *kvs_file) {}
  * @return [TODO:return]
  */
 static int prv_validate_kvs_file(KVS_File_t *kvs_file) {
-  kvs_file->max_file_size_bytes =
-      kvs_file->iterator.file_header.max_file_size_bytes;
-  kvs_file->max_used_space_bytes =
-      kvs_file->iterator.file_header.max_used_space_bytes;
+  kvs_file->max_file_size_bytes = kvs_file->iterator.file_header.max_file_size_bytes;
+  kvs_file->max_used_space_bytes = kvs_file->iterator.file_header.max_used_space_bytes;
 
   int ret = kvs_iterator_reset(&kvs_file->iterator);
   if (ret < 0) {
@@ -103,10 +101,8 @@ static int prv_repair_file(KVS_File_t *file) {
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_mark_record_overwrite_pending(KVS_Iterator_t *iterator,
-                                             off_t record_offset,
-                                             KVS_Record_Header_t *record_header,
-                                             void *ctx) {
+static int prv_mark_record_overwrite_pending(KVS_Iterator_t *iterator, off_t record_offset,
+                                             KVS_Record_Header_t *record_header, void *ctx) {
   return kvs_iterator_clear_flags(iterator, record_header, record_offset,
                                   KVS_RECORD_FLAG_OVERWRITE_PENDING);
 }
@@ -120,9 +116,8 @@ static int prv_mark_record_overwrite_pending(KVS_Iterator_t *iterator,
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_mark_record_overwrite_complete(
-    KVS_Iterator_t *iterator, off_t record_offset,
-    KVS_Record_Header_t *record_header, void *ctx) {
+static int prv_mark_record_overwrite_complete(KVS_Iterator_t *iterator, off_t record_offset,
+                                              KVS_Record_Header_t *record_header, void *ctx) {
   return kvs_iterator_clear_flags(iterator, record_header, record_offset,
                                   KVS_RECORD_FLAG_OVERWRITE_COMPLETE);
 }
@@ -135,17 +130,15 @@ static int prv_mark_record_overwrite_complete(
  * @param key_len [TODO:parameter]
  * @return [TODO:return]
  */
-static inline int prv_mark_records_overwrite_pending(KVS_File_t *kvs_file,
-                                                     const void *key,
+static inline int prv_mark_records_overwrite_pending(KVS_File_t *kvs_file, const void *key,
                                                      const size_t key_len) {
   KVS_Record_Filter_t filter = {
       .key = key, .key_len = key_len, .flags = 0x0, .exact_flag_match = true};
 
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_mark_record_overwrite_pending, .ctx = kvs_file};
+  KVS_Record_Foreach_Callback_t callback = {.callback = prv_mark_record_overwrite_pending,
+                                            .ctx = kvs_file};
 
-  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                                 &callback);
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
 
   if (ret < 0 && ret != -ENOENT) {
     LOG_ERR("Failed to iterate through records: %d", ret);
@@ -163,18 +156,16 @@ static inline int prv_mark_records_overwrite_pending(KVS_File_t *kvs_file,
  * @param key_len [TODO:parameter]
  * @return [TODO:return]
  */
-static inline int prv_mark_records_overwrite_complete(KVS_File_t *kvs_file,
-                                                      const void *key,
+static inline int prv_mark_records_overwrite_complete(KVS_File_t *kvs_file, const void *key,
                                                       const size_t key_len) {
   KVS_Record_Filter_t filter = {
       .key = key, .key_len = key_len, .flags = 0x0, .exact_flag_match = true};
   filter.flags |= KVS_OVERWRITE_IN_PROGRESS_MASK;
 
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_mark_record_overwrite_complete, .ctx = kvs_file};
+  KVS_Record_Foreach_Callback_t callback = {.callback = prv_mark_record_overwrite_complete,
+                                            .ctx = kvs_file};
 
-  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                                 &callback);
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
 
   if (ret < 0 && ret != -ENOENT) {
     LOG_ERR("Failed to iterate through records: %d", ret);
@@ -294,8 +285,7 @@ int kvs_file_open(KVS_File_t *kvs_file, const char *filename) {
   return 0;
 }
 
-int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
-                    size_t max_used_space_bytes) {
+int kvs_file_create(KVS_File_t *kvs_file, const char *filename, size_t max_used_space_bytes) {
   if (kvs_file == NULL || filename == NULL ||
       max_used_space_bytes < KVS_FILE_MINIMUM_USED_SPACE_BYTES) {
     return -EINVAL;
@@ -316,15 +306,13 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
   }
 
   KVS_File_Header_t header = {0};
-  memcpy(&header, KVS_FILE_FILE_HEADER_MAGIC,
-         sizeof(KVS_FILE_FILE_HEADER_MAGIC));
+  memcpy(&header, KVS_FILE_FILE_HEADER_MAGIC, sizeof(KVS_FILE_FILE_HEADER_MAGIC));
 
   header.max_used_space_bytes = max_used_space_bytes;
   header.max_file_size_bytes = max_used_space_bytes;
   header.max_file_size_bytes += (max_used_space_bytes * 100) / KVS_PADDING_PCT;
 
-  ret = pfs_truncate(&kvs_file->file,
-                     sizeof(KVS_File_Header_t) + sizeof(KVS_Record_Header_t));
+  ret = pfs_truncate(&kvs_file->file, sizeof(KVS_File_Header_t) + sizeof(KVS_Record_Header_t));
   if (ret < 0) {
     LOG_ERR("Failed to extend new KVS file: %d", ret);
     return ret;
@@ -344,8 +332,7 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
 
   KVS_Record_Header_t record_header = {0};
   memset(&record_header, 0xFF, sizeof(KVS_Record_Header_t));
-  memcpy(record_header.magic, KVS_FILE_RECORD_HEADER_MAGIC,
-         sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
+  memcpy(record_header.magic, KVS_FILE_RECORD_HEADER_MAGIC, sizeof(KVS_FILE_RECORD_HEADER_MAGIC));
 
   ret = pfs_write(&kvs_file->file, &record_header, sizeof(KVS_Record_Header_t));
 
@@ -361,9 +348,8 @@ int kvs_file_create(KVS_File_t *kvs_file, const char *filename,
   return kvs_file_open(kvs_file, filename);
 }
 
-int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
-                      const size_t key_len_bytes, const void *value,
-                      const size_t value_length_bytes) {
+int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes,
+                      const void *value, const size_t value_length_bytes) {
   if (kvs_file == NULL || key == NULL || value == NULL || key_len_bytes == 0 ||
       value_length_bytes == 0) {
     return -EINVAL;
@@ -375,8 +361,7 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
   // Don't clear MSB of key size as clearing that indicates the record is valid.
   // Clearing this at the end ensures that the file won't be corrupt if writing
   // only partially completes.
-  record_header.key_size_bytes =
-      KEY_RECORD_KEY_SIZE_EOF_MASK | (uint8_t)key_len_bytes;
+  record_header.key_size_bytes = KEY_RECORD_KEY_SIZE_EOF_MASK | (uint8_t)key_len_bytes;
   record_header.key_hash = kvs_hash_for_key(key, key_len_bytes);
   record_header.value_size_bytes = value_length_bytes;
 
@@ -403,8 +388,7 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
   }
 
   // Extend file to include new key and value
-  ret = pfs_truncate(&kvs_file->file,
-                     record_offset + key_len_bytes + value_length_bytes);
+  ret = pfs_truncate(&kvs_file->file, record_offset + key_len_bytes + value_length_bytes);
   if (ret < 0) {
     LOG_ERR("Failed to extend KVS file: %d", ret);
     return ret;
@@ -465,24 +449,19 @@ int kvs_file_set_pair(KVS_File_t *kvs_file, const void *key,
   return ret;
 }
 
-int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key,
-                           const size_t key_len_bytes,
+int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes,
                            size_t *value_len_bytes) {
-  if (kvs_file == NULL || key == NULL || value_len_bytes == NULL ||
-      key_len_bytes == 0) {
+  if (kvs_file == NULL || key == NULL || value_len_bytes == NULL || key_len_bytes == 0) {
     return -EINVAL;
   }
 
-  KVS_Record_Filter_t filter = {.key = key,
-                                .key_len = key_len_bytes,
-                                .flags = 0x0,
-                                .exact_flag_match = true};
+  KVS_Record_Filter_t filter = {
+      .key = key, .key_len = key_len_bytes, .flags = 0x0, .exact_flag_match = true};
 
   KVS_Record_Header_t header = {0};
   off_t header_offset = 0;
 
-  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter,
-                                         &header_offset, &header);
+  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter, &header_offset, &header);
 
   if (ret < 0) {
     return ret;
@@ -493,23 +472,19 @@ int kvs_file_get_value_len(KVS_File_t *kvs_file, const void *key,
   return 0;
 }
 
-int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
-                      const size_t key_len_bytes, void *dst, size_t dst_buf) {
-  if (kvs_file == NULL || key == NULL || dst == NULL || key_len_bytes == 0 ||
-      dst_buf == 0) {
+int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes, void *dst,
+                      size_t dst_buf) {
+  if (kvs_file == NULL || key == NULL || dst == NULL || key_len_bytes == 0 || dst_buf == 0) {
     return -EINVAL;
   }
 
-  KVS_Record_Filter_t filter = {.key = key,
-                                .key_len = key_len_bytes,
-                                .flags = 0x0,
-                                .exact_flag_match = true};
+  KVS_Record_Filter_t filter = {
+      .key = key, .key_len = key_len_bytes, .flags = 0x0, .exact_flag_match = true};
 
   KVS_Record_Header_t header = {0};
   off_t header_offset = 0;
 
-  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter,
-                                         &header_offset, &header);
+  int ret = kvs_iterator_first_occurence(&kvs_file->iterator, &filter, &header_offset, &header);
 
   if (ret < 0) {
     return ret;
@@ -519,8 +494,7 @@ int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
     return -ENOMEM;
   }
 
-  off_t value_offset =
-      header_offset + sizeof(KVS_Record_Header_t) + header.key_size_bytes;
+  off_t value_offset = header_offset + sizeof(KVS_Record_Header_t) + header.key_size_bytes;
   ret = pfs_seek(&kvs_file->file, value_offset, FS_SEEK_SET);
 
   if (ret < 0) {
@@ -542,22 +516,18 @@ int kvs_file_get_pair(KVS_File_t *kvs_file, const void *key,
   return 0;
 }
 
-int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
-                         const size_t key_len_bytes) {
+int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key, const size_t key_len_bytes) {
   if (kvs_file == NULL || key == NULL || key_len_bytes == 0) {
     return -EINVAL;
   }
 
-  KVS_Record_Filter_t filter = {.key = key,
-                                .key_len = key_len_bytes,
-                                .flags = 0x0,
-                                .exact_flag_match = false};
+  KVS_Record_Filter_t filter = {
+      .key = key, .key_len = key_len_bytes, .flags = 0x0, .exact_flag_match = false};
 
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_mark_record_overwrite_pending, .ctx = kvs_file};
+  KVS_Record_Foreach_Callback_t callback = {.callback = prv_mark_record_overwrite_pending,
+                                            .ctx = kvs_file};
 
-  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                                 &callback);
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
 
   if (ret < 0 && ret != -ENOENT) {
     return ret;
@@ -565,8 +535,7 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
 
   callback.callback = prv_mark_record_overwrite_complete;
 
-  ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                             &callback);
+  ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, &callback);
 
   if (ret < 0) {
     return ret;
@@ -577,27 +546,21 @@ int kvs_file_delete_pair(KVS_File_t *kvs_file, const void *key,
   return ret;
 }
 
-int kvs_file_foreach(KVS_File_t *kvs_file,
-                     KVS_Record_Foreach_Callback_t *callback, void *ctx) {
+int kvs_file_foreach(KVS_File_t *kvs_file, KVS_Record_Foreach_Callback_t *callback, void *ctx) {
   if (kvs_file == NULL || callback == NULL) {
     return -EINVAL;
   }
 
-  KVS_Record_Filter_t filter = {.exact_flag_match = true,
-                                .flags = 0,
-                                .key = NULL,
-                                .key_hash = 0,
-                                .key_len = 0};
+  KVS_Record_Filter_t filter = {
+      .exact_flag_match = true, .flags = 0, .key = NULL, .key_hash = 0, .key_len = 0};
 
-  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter,
-                                                 callback);
+  int ret = kvs_iterator_filtered_foreach_record(&kvs_file->iterator, &filter, callback);
 
   return ret;
 }
 
-int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
-                                       const off_t record_offset, void *key_buf,
-                                       size_t buf_size) {
+int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file, const off_t record_offset,
+                                       void *key_buf, size_t buf_size) {
   if (kvs_file == NULL || key_buf == NULL) {
     return -EINVAL;
   }
@@ -640,8 +603,7 @@ int kvs_file_get_key_for_record_offset(KVS_File_t *kvs_file,
   return 0;
 }
 
-int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file,
-                                         const off_t record_offset,
+int kvs_file_get_value_for_record_offset(KVS_File_t *kvs_file, const off_t record_offset,
                                          void *value_buf, size_t buf_size) {
   if (kvs_file == NULL || value_buf == NULL) {
     return -EINVAL;
@@ -701,8 +663,7 @@ static KVS_File_t prv_shell_file = {0};
 
 static bool prv_shell_file_open = false;
 
-static int prv_shell_open_file(const struct shell *sh, size_t argc,
-                               char **argv) {
+static int prv_shell_open_file(const struct shell *sh, size_t argc, char **argv) {
   int ret = kvs_file_open(&prv_shell_file, argv[1]);
 
   if (ret < 0) {
@@ -715,8 +676,7 @@ static int prv_shell_open_file(const struct shell *sh, size_t argc,
   return 0;
 }
 
-static int prv_shell_create_file(const struct shell *sh, size_t argc,
-                                 char **argv) {
+static int prv_shell_create_file(const struct shell *sh, size_t argc, char **argv) {
   int ret = kvs_file_create(&prv_shell_file, argv[1], atoi(argv[2]));
 
   if (ret < 0) {
@@ -729,9 +689,7 @@ static int prv_shell_create_file(const struct shell *sh, size_t argc,
   return 0;
 }
 
-static int prv_shell_fetch_value(const struct shell *sh, size_t argc,
-                                 char **argv) {
-
+static int prv_shell_fetch_value(const struct shell *sh, size_t argc, char **argv) {
   if (prv_shell_file_open == false) {
     shell_warn(sh, "Open KVS file first.");
     return -EIO;
@@ -741,8 +699,7 @@ static int prv_shell_fetch_value(const struct shell *sh, size_t argc,
 
   size_t value_size = 0;
 
-  int ret = kvs_file_get_value_len(&prv_shell_file, argv[1],
-                                   strlen(argv[1]) + 1, &value_size);
+  int ret = kvs_file_get_value_len(&prv_shell_file, argv[1], strlen(argv[1]) + 1, &value_size);
   if (ret == -ENOENT) {
     shell_warn(sh, "Key not found.");
     return -ENOENT;
@@ -753,8 +710,8 @@ static int prv_shell_fetch_value(const struct shell *sh, size_t argc,
     return ret;
   }
 
-  ret = kvs_file_get_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1,
-                          value_buf, sizeof(value_buf));
+  ret = kvs_file_get_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1, value_buf,
+                          sizeof(value_buf));
   if (ret < 0) {
     shell_error(sh, "Failed to get record value: %d", ret);
     return ret;
@@ -765,9 +722,7 @@ static int prv_shell_fetch_value(const struct shell *sh, size_t argc,
   return 0;
 }
 
-static int prv_shell_delete_value(const struct shell *sh, size_t argc,
-                                  char **argv) {
-
+static int prv_shell_delete_value(const struct shell *sh, size_t argc, char **argv) {
   if (prv_shell_file_open == false) {
     shell_warn(sh, "Open KVS file first.");
     return -EIO;
@@ -788,15 +743,14 @@ static int prv_shell_delete_value(const struct shell *sh, size_t argc,
   return 0;
 }
 
-static int prv_shell_set_value(const struct shell *sh, size_t argc,
-                               char **argv) {
+static int prv_shell_set_value(const struct shell *sh, size_t argc, char **argv) {
   if (prv_shell_file_open == false) {
     shell_warn(sh, "Open KVS file first.");
     return -EIO;
   }
 
-  int ret = kvs_file_set_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1,
-                              argv[2], strlen(argv[2]) + 1);
+  int ret = kvs_file_set_pair(&prv_shell_file, argv[1], strlen(argv[1]) + 1, argv[2],
+                              strlen(argv[2]) + 1);
 
   if (ret < 0) {
     shell_error(sh, "Failed to set value: %d", ret);
@@ -807,10 +761,8 @@ static int prv_shell_set_value(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-    sub_kvs,
-    SHELL_CMD_ARG(open, NULL, "Open KVS file.", prv_shell_open_file, 2, 0),
-    SHELL_CMD_ARG(create, NULL, "Close open file.", prv_shell_create_file, 3,
-                  0),
+    sub_kvs, SHELL_CMD_ARG(open, NULL, "Open KVS file.", prv_shell_open_file, 2, 0),
+    SHELL_CMD_ARG(create, NULL, "Close open file.", prv_shell_create_file, 3, 0),
     SHELL_CMD_ARG(set, NULL, "Set value.", prv_shell_set_value, 3, 0),
     SHELL_CMD_ARG(get, NULL, "Get value.", prv_shell_fetch_value, 3, 0),
     SHELL_CMD_ARG(delete, NULL, "Delete value.", prv_shell_delete_value, 2, 0),

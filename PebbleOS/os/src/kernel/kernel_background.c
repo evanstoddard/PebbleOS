@@ -60,9 +60,8 @@ int kernel_background_init(void) {
     return -EALREADY;
   }
 
-  int ret = pebble_thread_init(&prv_inst.thread, PebbleThread_KernelBackground,
-                               "Kernel BG", prv_thread_stack,
-                               CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
+  int ret = pebble_thread_init(&prv_inst.thread, PebbleThread_KernelBackground, "Kernel BG",
+                               prv_thread_stack, CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
                                prv_thread_entry, NULL);
 
   if (ret < 0) {

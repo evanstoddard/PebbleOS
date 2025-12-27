@@ -3,13 +3,15 @@
  */
 
 /**
- * @file ble_uuid.h
+ * @file ppogatt_protocol_definitions.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef ble_uuid_h
-#define ble_uuid_h
+#ifndef ppogatt_protocol_definitions_h
+#define ppogatt_protocol_definitions_h
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,12 +21,26 @@ extern "C" {
  * Definitions
  *****************************************************************************/
 
-#define PEBBLE_BASE_UUID_BYTES \
-  0xDA, 0xDA, 0x9B, 0x69, 0xA6, 0x1A, 0x42, 0xC6, 0xBB, 0x0F, 0x8E, 0x32
-
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
+
+typedef enum {
+  PPoGATT_PACKET_TYPE_DATA = 0x0,
+  PPoGATT_PACKET_TYPE_ACK = 0x1,
+  PPoGATT_PACKET_TYPE_RESET = 0x2,
+  PPoGATT_PACKET_TYPE_RESET_COMPLETE = 0x3,
+} PPoGATT_Packet_Type_t;
+
+/**
+ * @typedef PPoGATT_Packet_Header_t
+ * @brief [TODO:description]
+ *
+ */
+typedef struct PPoGATT_Packet_Header_t {
+  PPoGATT_Packet_Type_t type : 3;
+  uint8_t sn : 5;
+} __attribute__((__packed__)) PPoGATT_Packet_Header_t;
 
 /*****************************************************************************
  * Function Prototypes
@@ -33,4 +49,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* ble_uuid_h */
+#endif /* ppogatt_protocol_definitions_h */

@@ -35,8 +35,7 @@ LOG_MODULE_REGISTER(pebble_thread);
  * @param arg2 Unused
  * @param arg3 Unused
  */
-static void prv_thread_entry_wrapper(void *thread_inst, void *arg2,
-                                     void *arg3) {
+static void prv_thread_entry_wrapper(void *thread_inst, void *arg2, void *arg3) {
   PebbleThread_t *inst = (PebbleThread_t *)thread_inst;
 
   // NOTE: This will not work on 64-bit systems as zephyr only provides a 32-bit
@@ -52,10 +51,8 @@ static void prv_thread_entry_wrapper(void *thread_inst, void *arg2,
  * Functions
  *****************************************************************************/
 
-PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type,
-                                     const char *thread_name,
-                                     const size_t stack_size_bytes,
-                                     PebbleThread_Func thread_entry,
+PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type, const char *thread_name,
+                                     const size_t stack_size_bytes, PebbleThread_Func thread_entry,
                                      void *args) {
   if (thread_name == NULL || thread_entry == NULL) {
     return NULL;
@@ -83,18 +80,16 @@ PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type,
     return NULL;
   }
 
-  (void)pebble_thread_init(thread, type, thread_name, thread->stack_buf,
-                           stack_size_bytes, thread_entry, args);
+  (void)pebble_thread_init(thread, type, thread_name, thread->stack_buf, stack_size_bytes,
+                           thread_entry, args);
 
   return thread;
 }
 
 int pebble_thread_init(PebbleThread_t *thread, const PebbleThreadType_t type,
-                       const char *thread_name, void *stack_buf,
-                       const size_t stack_size_bytes,
+                       const char *thread_name, void *stack_buf, const size_t stack_size_bytes,
                        PebbleThread_Func thread_entry, void *args) {
-  if (thread == NULL || thread_name == NULL || stack_buf == NULL ||
-      thread_entry == NULL) {
+  if (thread == NULL || thread_name == NULL || stack_buf == NULL || thread_entry == NULL) {
     LOG_ERR("Pointers passed in are NULL.");
     return 0;
   }
@@ -117,10 +112,9 @@ int pebble_thread_init(PebbleThread_t *thread, const PebbleThreadType_t type,
 
   thread->thread_entry = thread_entry;
 
-  thread->tid = k_thread_create(
-      &thread->thread, (k_thread_stack_t *)thread->stack_buf,
-      (thread->stack_size_bytes - K_THREAD_STACK_RESERVED),
-      prv_thread_entry_wrapper, thread, NULL, NULL, 5, 0, K_NO_WAIT);
+  thread->tid = k_thread_create(&thread->thread, (k_thread_stack_t *)thread->stack_buf,
+                                (thread->stack_size_bytes - K_THREAD_STACK_RESERVED),
+                                prv_thread_entry_wrapper, thread, NULL, NULL, 5, 0, K_NO_WAIT);
 
   return 0;
 }

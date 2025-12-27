@@ -76,10 +76,8 @@ typedef struct PebbleThread_t {
  * @return Returns pointer to thread
  * @retval NULL Unable to create thread
  */
-PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type,
-                                     const char *thread_name,
-                                     const size_t stack_size_bytes,
-                                     PebbleThread_Func thread_entry,
+PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type, const char *thread_name,
+                                     const size_t stack_size_bytes, PebbleThread_Func thread_entry,
                                      void *args);
 
 /**
@@ -98,9 +96,8 @@ PebbleThread_t *pebble_thread_create(const PebbleThreadType_t type,
  * @retval 0 Successfully initialized thread
  */
 int pebble_thread_init(PebbleThread_t *thread, const PebbleThreadType_t type,
-                       const char *thread_name, void *stack_buf,
-                       size_t stack_size_bytes, PebbleThread_Func thread_entry,
-                       void *args);
+                       const char *thread_name, void *stack_buf, size_t stack_size_bytes,
+                       PebbleThread_Func thread_entry, void *args);
 
 /**
  * @brief Destroy allocated thread

@@ -11,6 +11,8 @@
 #ifndef ble_ppogatt_service_h
 #define ble_ppogatt_service_h
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +35,22 @@ extern "C" {
  * @return [TODO:return]
  */
 int ble_ppogatt_service_init(void);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @return [TODO:return]
+ */
+int ble_ppogatt_fetch_meta_data(void);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param buf [TODO:parameter]
+ * @param len [TODO:parameter]
+ * @return [TODO:return]
+ */
+int ble_ppogatt_write_data(const void *buf, uint16_t len);
 
 #ifdef __cplusplus
 }

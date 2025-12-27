@@ -73,8 +73,7 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator);
  * @param callback [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_iterator_foreach_record(KVS_Iterator_t *iterator,
-                                KVS_Record_Foreach_Callback_t *callback);
+int kvs_iterator_foreach_record(KVS_Iterator_t *iterator, KVS_Record_Foreach_Callback_t *callback);
 
 /**
  * @brief [TODO:description]
@@ -84,9 +83,8 @@ int kvs_iterator_foreach_record(KVS_Iterator_t *iterator,
  * @param callback [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_iterator_filtered_foreach_record(
-    KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
-    KVS_Record_Foreach_Callback_t *callback);
+int kvs_iterator_filtered_foreach_record(KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
+                                         KVS_Record_Foreach_Callback_t *callback);
 
 /**
  * @brief [TODO:description]
@@ -97,10 +95,8 @@ int kvs_iterator_filtered_foreach_record(
  * @param record_header [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
-                                 KVS_Record_Filter_t *filter,
-                                 off_t *record_offset,
-                                 KVS_Record_Header_t *record_header);
+int kvs_iterator_first_occurence(KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
+                                 off_t *record_offset, KVS_Record_Header_t *record_header);
 
 /**
  * @brief [TODO:description]
@@ -111,8 +107,7 @@ int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
  * @param flags [TODO:parameter]
  * @return [TODO:return]
  */
-int kvs_iterator_clear_flags(KVS_Iterator_t *iterator,
-                             KVS_Record_Header_t *record_header,
+int kvs_iterator_clear_flags(KVS_Iterator_t *iterator, KVS_Record_Header_t *record_header,
                              off_t record_offset, uint8_t flags);
 
 #ifdef __cplusplus

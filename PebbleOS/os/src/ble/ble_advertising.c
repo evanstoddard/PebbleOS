@@ -65,17 +65,16 @@ typedef struct ManufacturerSpecificData_t {
  * Variables
  *****************************************************************************/
 
-static const struct bt_le_adv_param *prv_adv_params = BT_LE_ADV_PARAM(
-    (BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY),
-    BLE_ADV_MIN_ADVERTISE_INTERVAL, BLE_ADV_MAX_ADVERTISE_INTERVAL, NULL);
+static const struct bt_le_adv_param *prv_adv_params =
+    BT_LE_ADV_PARAM((BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY),
+                    BLE_ADV_MIN_ADVERTISE_INTERVAL, BLE_ADV_MAX_ADVERTISE_INTERVAL, NULL);
 
 static const struct bt_data prv_advertising_data[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 
-    BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xD9, 0xFE), // 0xFED9 little-endian
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xD9, 0xFE),  // 0xFED9 little-endian
 
-    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
-            sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
 /**
@@ -95,7 +94,6 @@ static struct {
  * @param work [TODO:parameter]
  */
 static void prv_advertising_work_handler(struct k_work *work) {
-
   // TODO: Dynamically fetch manufacturing data
   static ManufacturerSpecificData_t mfg_data = {0};
   mfg_data.company_id = 0x0154;
@@ -107,8 +105,8 @@ static void prv_advertising_work_handler(struct k_work *work) {
   static const struct bt_data sd[] = {
       BT_DATA(BT_DATA_MANUFACTURER_DATA, &mfg_data, sizeof(mfg_data))};
 
-  bt_le_adv_start(prv_adv_params, prv_advertising_data,
-                  ARRAY_SIZE(prv_advertising_data), sd, ARRAY_SIZE(sd));
+  bt_le_adv_start(prv_adv_params, prv_advertising_data, ARRAY_SIZE(prv_advertising_data), sd,
+                  ARRAY_SIZE(sd));
 }
 
 /*****************************************************************************
@@ -119,4 +117,6 @@ void ble_advertising_init(void) {
   k_work_init(&prv_inst.adv_worker, prv_advertising_work_handler);
 }
 
-void ble_advertising_begin(void) { k_work_submit(&prv_inst.adv_worker); }
+void ble_advertising_begin(void) {
+  k_work_submit(&prv_inst.adv_worker);
+}

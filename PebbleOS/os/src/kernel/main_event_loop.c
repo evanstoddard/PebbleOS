@@ -36,7 +36,6 @@ void main_event_loop(void) {
   static PebbleEvent_t event = {};
 
   while (true) {
-
     if (events_take(&event, CONFIG_MAIN_EVENT_LOOP_TAKE_TIMEOUT_MS) != 0) {
       continue;
     }

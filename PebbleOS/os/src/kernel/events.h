@@ -42,7 +42,7 @@ typedef enum {
   PEBBLE_RENDER_READY_EVENT,
   //! From kernel to app, notification that render was completed
   PEBBLE_RENDER_FINISHED_EVENT,
-  PEBBLE_BATTERY_CONNECTION_EVENT, // TODO: this has a poor name
+  PEBBLE_BATTERY_CONNECTION_EVENT,  // TODO: this has a poor name
   PEBBLE_PUT_BYTES_EVENT,
   PEBBLE_BT_PAIRING_EVENT,
   // Emitted when the Pebble mobile app or third party app is (dis)connected

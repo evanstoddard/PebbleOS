@@ -73,25 +73,22 @@ static struct {
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-int prv_enumeration_wrapper_callback(KVS_Iterator_t *iterator,
-                                     off_t record_offset,
-                                     KVS_Record_Header_t *record_header,
-                                     void *ctx) {
+int prv_enumeration_wrapper_callback(KVS_Iterator_t *iterator, off_t record_offset,
+                                     KVS_Record_Header_t *record_header, void *ctx) {
   AppDBEnumerateCallback_t *cb = (AppDBEnumerateCallback_t *)ctx;
 
   int32_t app_id = 0;
   AppDBEntry_t entry = {0};
 
-  int ret = kvs_file_get_key_for_record_offset(&prv_inst.file, record_offset,
-                                               &app_id, sizeof(app_id));
+  int ret =
+      kvs_file_get_key_for_record_offset(&prv_inst.file, record_offset, &app_id, sizeof(app_id));
 
   if (ret < 0) {
     LOG_ERR("Failed to get key for enumerated record: %d", ret);
     return ret;
   }
 
-  ret = kvs_file_get_value_for_record_offset(&prv_inst.file, record_offset,
-                                             &entry, sizeof(entry));
+  ret = kvs_file_get_value_for_record_offset(&prv_inst.file, record_offset, &entry, sizeof(entry));
   if (ret < 0) {
     LOG_ERR("Failed to get entry for enumerated record: %d", ret);
     return ret;
@@ -111,25 +108,21 @@ int prv_enumeration_wrapper_callback(KVS_Iterator_t *iterator,
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-int prv_app_id_for_uuid_foreach_callback(KVS_Iterator_t *iterator,
-                                         off_t record_offset,
-                                         KVS_Record_Header_t *record_header,
-                                         void *ctx) {
-
+int prv_app_id_for_uuid_foreach_callback(KVS_Iterator_t *iterator, off_t record_offset,
+                                         KVS_Record_Header_t *record_header, void *ctx) {
   AppDB_UUID_Search_Context_t *_ctx = (AppDB_UUID_Search_Context_t *)ctx;
 
   AppDBEntry_t entry = {0};
   int32_t app_id = 0;
 
-  int ret = kvs_file_get_key_for_record_offset(&prv_inst.file, record_offset,
-                                               &app_id, sizeof(app_id));
+  int ret =
+      kvs_file_get_key_for_record_offset(&prv_inst.file, record_offset, &app_id, sizeof(app_id));
   if (ret < 0) {
     LOG_ERR("Failed to get App ID for record offset: %d", ret);
     return ret;
   }
 
-  ret = kvs_file_get_value_for_record_offset(&prv_inst.file, record_offset,
-                                             &entry, sizeof(entry));
+  ret = kvs_file_get_value_for_record_offset(&prv_inst.file, record_offset, &entry, sizeof(entry));
   if (ret < 0) {
     LOG_ERR("Failed to get app DB entry for record offset: %d", ret);
     return ret;
@@ -159,7 +152,6 @@ int app_db_init(void) {
   ret = kvs_file_open(&prv_inst.file, APP_DB_FILE);
 
   if (ret < 0) {
-
     // While not currently implemented, KVS file should self-repair. If self
     // repair fails, then delete corrupted KVS file, and attempt to create a
     // new one.  If failure occurs due to bad flash or some other
@@ -173,8 +165,7 @@ int app_db_init(void) {
       pfs_delete(APP_DB_FILE);
     }
 
-    ret = kvs_file_create(&prv_inst.file, APP_DB_FILE,
-                          APP_DB_FILE_MAX_SIZE_BYTES);
+    ret = kvs_file_create(&prv_inst.file, APP_DB_FILE, APP_DB_FILE_MAX_SIZE_BYTES);
 
     LOG_ERR("Failed to create App DB file: %d", ret);
     return ret;
@@ -190,11 +181,10 @@ int app_db_app_id_for_uuid(Uuid_t *uuid, int32_t *app_id) {
 
   k_mutex_lock(&prv_inst.mutex, K_FOREVER);
 
-  AppDB_UUID_Search_Context_t context = {
-      .found = false, .app_id = app_id, .uuid = uuid};
+  AppDB_UUID_Search_Context_t context = {.found = false, .app_id = app_id, .uuid = uuid};
 
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_app_id_for_uuid_foreach_callback, .ctx = &context};
+  KVS_Record_Foreach_Callback_t callback = {.callback = prv_app_id_for_uuid_foreach_callback,
+                                            .ctx = &context};
 
   int ret = kvs_file_foreach(&prv_inst.file, &callback, &context);
 
@@ -212,7 +202,9 @@ int app_db_app_id_for_uuid(Uuid_t *uuid, int32_t *app_id) {
   return 0;
 }
 
-int32_t app_db_next_app_id(void) { return prv_inst.latest_app_id + 1; }
+int32_t app_db_next_app_id(void) {
+  return prv_inst.latest_app_id + 1;
+}
 
 int app_db_entry_for_uuid(Uuid_t *uuid, AppDBEntry_t *entry) {
   int ret = -ENOTSUP;
@@ -227,8 +219,7 @@ int app_db_entry_for_app_id(int32_t app_id, AppDBEntry_t *entry) {
 
   k_mutex_lock(&prv_inst.mutex, K_FOREVER);
 
-  int ret = kvs_file_get_pair(&prv_inst.file, &app_id, sizeof(app_id), entry,
-                              sizeof(AppDBEntry_t));
+  int ret = kvs_file_get_pair(&prv_inst.file, &app_id, sizeof(app_id), entry, sizeof(AppDBEntry_t));
 
   k_mutex_unlock(&prv_inst.mutex);
 
@@ -254,8 +245,7 @@ int app_db_insert(AppDBEntry_t *entry) {
     return ret;
   }
 
-  ret = kvs_file_set_pair(&prv_inst.file, &app_id, sizeof(app_id), entry,
-                          sizeof(AppDBEntry_t));
+  ret = kvs_file_set_pair(&prv_inst.file, &app_id, sizeof(app_id), entry, sizeof(AppDBEntry_t));
   if (ret < 0) {
     LOG_ERR("Failed to insert/update app DB entry: %d", ret);
     k_mutex_unlock(&prv_inst.mutex);
@@ -290,8 +280,8 @@ int app_db_enumerate(AppDBEnumerateCallback_t *callback) {
 
   k_mutex_lock(&prv_inst.mutex, K_FOREVER);
 
-  KVS_Record_Foreach_Callback_t wrapper_cb = {
-      .callback = prv_enumeration_wrapper_callback, .ctx = callback};
+  KVS_Record_Foreach_Callback_t wrapper_cb = {.callback = prv_enumeration_wrapper_callback,
+                                              .ctx = callback};
 
   int ret = kvs_file_foreach(&prv_inst.file, &wrapper_cb, callback);
 

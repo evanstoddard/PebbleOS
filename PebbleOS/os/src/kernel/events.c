@@ -38,10 +38,8 @@ static struct {
 
   uint8_t kernel_event_buf[sizeof(PebbleEvent_t) * CONFIG_MAX_KERNEL_EVENTS];
   uint8_t app_event_buf[sizeof(PebbleEvent_t) * CONFIG_MAX_FROM_APP_EVENTS];
-  uint8_t
-      worker_event_buf[sizeof(PebbleEvent_t) * CONFIG_MAX_FROM_WORKER_EVENTS];
-  uint8_t from_kernel_event_buf[sizeof(PebbleEvent_t) *
-                                CONFIG_MAX_FROM_KERNEL_MAIN_EVENTS];
+  uint8_t worker_event_buf[sizeof(PebbleEvent_t) * CONFIG_MAX_FROM_WORKER_EVENTS];
+  uint8_t from_kernel_event_buf[sizeof(PebbleEvent_t) * CONFIG_MAX_FROM_KERNEL_MAIN_EVENTS];
 
   struct k_poll_event poll_events[EVENTS_NUM_POLLED_EVENT_QUEUES];
 } prv_inst;
@@ -57,8 +55,7 @@ static struct {
  * @param event Pointer to event to add to queue
  */
 static void prv_queue_event(struct k_msgq *queue, PebbleEvent_t *event) {
-  k_timeout_t timeout =
-      (!k_is_in_isr()) ? K_MSEC(CONFIG_EVENT_QUEUE_PUT_TIMEOUT_MS) : K_NO_WAIT;
+  k_timeout_t timeout = (!k_is_in_isr()) ? K_MSEC(CONFIG_EVENT_QUEUE_PUT_TIMEOUT_MS) : K_NO_WAIT;
 
   int ret = k_msgq_put(queue, event, timeout);
 
@@ -89,14 +86,13 @@ inline static void prv_reset_poll_events(void) {
  * @return Return status of event queue initialization
  */
 int events_init(void) {
-
   // Initialize event queues
-  k_msgq_init(&prv_inst.kernel_event_queue, prv_inst.kernel_event_buf,
-              sizeof(PebbleEvent_t), CONFIG_MAX_KERNEL_EVENTS);
-  k_msgq_init(&prv_inst.from_app_event_queue, prv_inst.app_event_buf,
-              sizeof(PebbleEvent_t), CONFIG_MAX_FROM_APP_EVENTS);
-  k_msgq_init(&prv_inst.from_worker_event_queue, prv_inst.worker_event_buf,
-              sizeof(PebbleEvent_t), CONFIG_MAX_FROM_WORKER_EVENTS);
+  k_msgq_init(&prv_inst.kernel_event_queue, prv_inst.kernel_event_buf, sizeof(PebbleEvent_t),
+              CONFIG_MAX_KERNEL_EVENTS);
+  k_msgq_init(&prv_inst.from_app_event_queue, prv_inst.app_event_buf, sizeof(PebbleEvent_t),
+              CONFIG_MAX_FROM_APP_EVENTS);
+  k_msgq_init(&prv_inst.from_worker_event_queue, prv_inst.worker_event_buf, sizeof(PebbleEvent_t),
+              CONFIG_MAX_FROM_WORKER_EVENTS);
   k_msgq_init(&prv_inst.from_kernel_event_queue, prv_inst.from_kernel_event_buf,
               sizeof(PebbleEvent_t), CONFIG_MAX_FROM_KERNEL_MAIN_EVENTS);
 
@@ -132,21 +128,21 @@ int events_put_event(PebbleEvent_t *event) {
   struct k_msgq *queue = NULL;
 
   switch (calling_thread->type) {
-  case PebbleThread_KernelMain:
-    queue = &prv_inst.from_kernel_event_queue;
-    break;
-  case PebbleThread_App:
-    queue = &prv_inst.from_app_event_queue;
-    break;
-  case PebbleThread_Worker:
-    queue = &prv_inst.from_worker_event_queue;
-    break;
-  case PebbleThread_KernelBackground:
-    queue = &prv_inst.kernel_event_queue;
-    break;
-  default:
-    // TODO: WTF
-    return -EIO;
+    case PebbleThread_KernelMain:
+      queue = &prv_inst.from_kernel_event_queue;
+      break;
+    case PebbleThread_App:
+      queue = &prv_inst.from_app_event_queue;
+      break;
+    case PebbleThread_Worker:
+      queue = &prv_inst.from_worker_event_queue;
+      break;
+    case PebbleThread_KernelBackground:
+      queue = &prv_inst.kernel_event_queue;
+      break;
+    default:
+      // TODO: WTF
+      return -EIO;
   }
 
   if (queue == NULL) {
@@ -172,8 +168,7 @@ int events_take(PebbleEvent_t *event, uint32_t timeout_ms) {
   }
 
   // Poll on events
-  ret = k_poll(prv_inst.poll_events, ARRAY_SIZE(prv_inst.poll_events),
-               K_MSEC(timeout_ms));
+  ret = k_poll(prv_inst.poll_events, ARRAY_SIZE(prv_inst.poll_events), K_MSEC(timeout_ms));
 
   if (ret != 0) {
     prv_reset_poll_events();

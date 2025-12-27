@@ -158,8 +158,7 @@ static pfs_file_t prv_shell_file;
 
 static bool prv_shell_file_open = false;
 
-static int prv_shell_open_file(const struct shell *sh, size_t argc,
-                               char **argv) {
+static int prv_shell_open_file(const struct shell *sh, size_t argc, char **argv) {
   fs_mode_t flags = 0;
 
   if (prv_shell_file_open == true) {
@@ -172,23 +171,23 @@ static int prv_shell_open_file(const struct shell *sh, size_t argc,
 
   for (size_t i = 0; i < strlen(in_flags); i++) {
     switch (in_flags[i]) {
-    case 'r':
-    case 'R':
-      flags |= FS_O_READ;
-      break;
+      case 'r':
+      case 'R':
+        flags |= FS_O_READ;
+        break;
 
-    case 'w':
-    case 'W':
-      flags |= FS_O_WRITE;
-      break;
+      case 'w':
+      case 'W':
+        flags |= FS_O_WRITE;
+        break;
 
-    case 'c':
-    case 'C':
-      flags |= FS_O_CREATE;
-      break;
+      case 'c':
+      case 'C':
+        flags |= FS_O_CREATE;
+        break;
 
-    default:
-      break;
+      default:
+        break;
     }
   }
 
@@ -204,8 +203,7 @@ static int prv_shell_open_file(const struct shell *sh, size_t argc,
   return 0;
 }
 
-static int prv_shell_close_file(const struct shell *sh, size_t argc,
-                                char **argv) {
+static int prv_shell_close_file(const struct shell *sh, size_t argc, char **argv) {
   if (prv_shell_file_open == false) {
     shell_warn(sh, "No file open");
     return -ENFILE;
@@ -223,10 +221,10 @@ static int prv_shell_close_file(const struct shell *sh, size_t argc,
   return ret;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-    sub_pfs, SHELL_CMD_ARG(open, NULL, "Open file.", prv_shell_open_file, 3, 0),
-    SHELL_CMD(close, NULL, "Close open file.", prv_shell_close_file),
-    SHELL_SUBCMD_SET_END);
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_pfs,
+                               SHELL_CMD_ARG(open, NULL, "Open file.", prv_shell_open_file, 3, 0),
+                               SHELL_CMD(close, NULL, "Close open file.", prv_shell_close_file),
+                               SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pfs, &sub_pfs, "Pebble Filesystem Commands", NULL);
 #endif

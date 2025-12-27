@@ -107,8 +107,7 @@ bool prv_record_header_valid_eof_header(KVS_Record_Header_t *record_header) {
  * @param record_header [TODO:parameter]
  * @return [TODO:return]
  */
-bool prv_record_header_valid(KVS_Record_Header_t *record_header,
-                             bool *eof_header) {
+bool prv_record_header_valid(KVS_Record_Header_t *record_header, bool *eof_header) {
   *eof_header = false;
 
   int ret = memcmp(record_header->magic, KVS_FILE_RECORD_HEADER_MAGIC,
@@ -140,8 +139,7 @@ off_t prv_next_record_offset(KVS_Iterator_t *iterator) {
   bool eof_header = false;
 
   // Current header is invalid, so we can't determine next record offset
-  if (prv_record_header_valid(&iterator->current_record_header, &eof_header) ==
-      false) {
+  if (prv_record_header_valid(&iterator->current_record_header, &eof_header) == false) {
     return -EBADMSG;
   }
 
@@ -166,8 +164,7 @@ off_t prv_next_record_offset(KVS_Iterator_t *iterator) {
  * @param flags Flags to clear
  * @return [TODO:return]
  */
-int prv_clear_record_flags(KVS_Iterator_t *iterator, off_t header_offset,
-                           uint8_t flags) {
+int prv_clear_record_flags(KVS_Iterator_t *iterator, off_t header_offset, uint8_t flags) {
   int ret = pfs_seek(iterator->file, header_offset, FS_SEEK_SET);
   if (ret < 0) {
     return ret;
@@ -216,10 +213,8 @@ int prv_clear_record_flags(KVS_Iterator_t *iterator, off_t header_offset,
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
-                                        off_t record_offset,
-                                        KVS_Record_Header_t *record_header,
-                                        void *ctx) {
+static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator, off_t record_offset,
+                                        KVS_Record_Header_t *record_header, void *ctx) {
   KVS_Filter_Context_t *filter_ctx = (KVS_Filter_Context_t *)ctx;
   KVS_Record_Filter_t *filter = filter_ctx->record_filter;
 
@@ -234,11 +229,9 @@ static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
       return 1;
     }
 
-    pfs_seek(iterator->file, record_offset + sizeof(KVS_Record_Header_t),
-             FS_SEEK_SET);
+    pfs_seek(iterator->file, record_offset + sizeof(KVS_Record_Header_t), FS_SEEK_SET);
 
-    ssize_t bytes =
-        pfs_read(iterator->file, key_buf, record_header->key_size_bytes);
+    ssize_t bytes = pfs_read(iterator->file, key_buf, record_header->key_size_bytes);
 
     if (bytes < 0) {
       LOG_ERR("Failed to read key: %d", bytes);
@@ -273,9 +266,8 @@ static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
   filter_ctx->record_offset = record_offset;
 
   if (filter_ctx->target_callback) {
-    int ret = filter_ctx->target_callback->callback(
-        iterator, record_offset, record_header,
-        filter_ctx->target_callback->ctx);
+    int ret = filter_ctx->target_callback->callback(iterator, record_offset, record_header,
+                                                    filter_ctx->target_callback->ctx);
 
     if (ret < 0) {
       return ret;
@@ -298,8 +290,7 @@ static int prv_filtered_foreach_wrapper(KVS_Iterator_t *iterator,
  * @param first_occurence [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_filtered_foreach_record(KVS_Iterator_t *iterator,
-                                       KVS_Record_Filter_t *filter,
+static int prv_filtered_foreach_record(KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
                                        KVS_Record_Foreach_Callback_t *callback,
                                        bool first_occurence) {
   KVS_Filter_Context_t filter_ctx = {0};
@@ -307,8 +298,8 @@ static int prv_filtered_foreach_record(KVS_Iterator_t *iterator,
   filter_ctx.target_callback = callback;
   filter_ctx.first_occurence = first_occurence;
 
-  KVS_Record_Foreach_Callback_t wrapped_callback = {
-      .callback = prv_filtered_foreach_wrapper, .ctx = &filter_ctx};
+  KVS_Record_Foreach_Callback_t wrapped_callback = {.callback = prv_filtered_foreach_wrapper,
+                                                    .ctx = &filter_ctx};
 
   // Generate hash for provided key
   if (filter->key != NULL) {
@@ -337,11 +328,8 @@ static int prv_filtered_foreach_record(KVS_Iterator_t *iterator,
  * @param ctx [TODO:parameter]
  * @return [TODO:return]
  */
-static int prv_first_occurence_callback(KVS_Iterator_t *iterator,
-                                        off_t record_offset,
-                                        KVS_Record_Header_t *record_header,
-                                        void *ctx) {
-
+static int prv_first_occurence_callback(KVS_Iterator_t *iterator, off_t record_offset,
+                                        KVS_Record_Header_t *record_header, void *ctx) {
   KVS_First_Occurence_Context_t *_ctx = (KVS_First_Occurence_Context_t *)ctx;
 
   memcpy(_ctx->record_header, record_header, sizeof(KVS_Record_Header_t));
@@ -391,8 +379,7 @@ int kvs_iterator_fetch_file_header(KVS_Iterator_t *iterator) {
     return ret;
   }
 
-  ssize_t read = pfs_read(iterator->file, &iterator->file_header,
-                          sizeof(KVS_File_Header_t));
+  ssize_t read = pfs_read(iterator->file, &iterator->file_header, sizeof(KVS_File_Header_t));
 
   if (read < 0) {
     LOG_ERR("Failed to read KVS file header: %d", read);
@@ -435,8 +422,8 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator) {
     return ret;
   }
 
-  ssize_t read = pfs_read(iterator->file, &iterator->current_record_header,
-                          sizeof(KVS_Record_Header_t));
+  ssize_t read =
+      pfs_read(iterator->file, &iterator->current_record_header, sizeof(KVS_Record_Header_t));
 
   if (read != sizeof(KVS_Record_Header_t)) {
     LOG_ERR("Unable to fetch complete KVS record header: %d", read);
@@ -445,8 +432,7 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator) {
 
   // Validate latest read record header
   bool eof_record = false;
-  bool valid =
-      prv_record_header_valid(&iterator->current_record_header, &eof_record);
+  bool valid = prv_record_header_valid(&iterator->current_record_header, &eof_record);
 
   if (valid == false) {
     return -EBADMSG;
@@ -461,8 +447,7 @@ int kvs_iterator_next_record(KVS_Iterator_t *iterator) {
   return 1;
 }
 
-int kvs_iterator_foreach_record(KVS_Iterator_t *iterator,
-                                KVS_Record_Foreach_Callback_t *callback) {
+int kvs_iterator_foreach_record(KVS_Iterator_t *iterator, KVS_Record_Foreach_Callback_t *callback) {
   int ret = kvs_iterator_reset(iterator);
   if (ret < 0) {
     return ret;
@@ -481,9 +466,8 @@ int kvs_iterator_foreach_record(KVS_Iterator_t *iterator,
       break;
     }
 
-    int cb_ret =
-        callback->callback(iterator, iterator->current_header_position,
-                           &iterator->current_record_header, callback->ctx);
+    int cb_ret = callback->callback(iterator, iterator->current_header_position,
+                                    &iterator->current_record_header, callback->ctx);
 
     if (cb_ret < 0) {
       return cb_ret;
@@ -498,9 +482,8 @@ int kvs_iterator_foreach_record(KVS_Iterator_t *iterator,
   return 0;
 }
 
-int kvs_iterator_filtered_foreach_record(
-    KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
-    KVS_Record_Foreach_Callback_t *callback) {
+int kvs_iterator_filtered_foreach_record(KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
+                                         KVS_Record_Foreach_Callback_t *callback) {
   if (iterator == NULL || filter == NULL || callback == NULL) {
     return -EINVAL;
   }
@@ -508,28 +491,23 @@ int kvs_iterator_filtered_foreach_record(
   return prv_filtered_foreach_record(iterator, filter, callback, false);
 }
 
-int kvs_iterator_first_occurence(KVS_Iterator_t *iterator,
-                                 KVS_Record_Filter_t *filter,
-                                 off_t *record_offset,
-                                 KVS_Record_Header_t *record_header) {
-  if (iterator == NULL || filter == NULL || record_offset == NULL ||
-      record_header == NULL) {
+int kvs_iterator_first_occurence(KVS_Iterator_t *iterator, KVS_Record_Filter_t *filter,
+                                 off_t *record_offset, KVS_Record_Header_t *record_header) {
+  if (iterator == NULL || filter == NULL || record_offset == NULL || record_header == NULL) {
     return -EINVAL;
   }
 
   KVS_First_Occurence_Context_t ctx = {.record_offset = record_offset,
                                        .record_header = record_header};
 
-  KVS_Record_Foreach_Callback_t callback = {
-      .callback = prv_first_occurence_callback, .ctx = &ctx};
+  KVS_Record_Foreach_Callback_t callback = {.callback = prv_first_occurence_callback, .ctx = &ctx};
 
   int ret = prv_filtered_foreach_record(iterator, filter, &callback, true);
 
   return ret;
 }
 
-int kvs_iterator_clear_flags(KVS_Iterator_t *iterator,
-                             KVS_Record_Header_t *record_header,
+int kvs_iterator_clear_flags(KVS_Iterator_t *iterator, KVS_Record_Header_t *record_header,
                              off_t record_offset, uint8_t flags) {
   if (iterator == NULL || record_header == NULL) {
     return -EINVAL;
@@ -543,8 +521,7 @@ int kvs_iterator_clear_flags(KVS_Iterator_t *iterator,
     return ret;
   }
 
-  ssize_t bytes =
-      pfs_write(iterator->file, record_header, sizeof(KVS_Record_Header_t));
+  ssize_t bytes = pfs_write(iterator->file, record_header, sizeof(KVS_Record_Header_t));
   if (bytes < 0) {
     LOG_ERR("Failed to update record header: %d", bytes);
     return bytes;
