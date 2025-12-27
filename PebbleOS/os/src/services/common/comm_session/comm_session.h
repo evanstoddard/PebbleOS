@@ -3,13 +3,13 @@
  */
 
 /**
- * @file ppogatt_client.h
+ * @file comm_session.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef ppogatt_client_h
-#define ppogatt_client_h
+#ifndef comm_session_h
+#define comm_session_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,15 +20,16 @@ extern "C" {
  *****************************************************************************/
 
 /*****************************************************************************
+ * Structs, Unions, Enums, & Typedefs
+ *****************************************************************************/
+
+/*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
 
-/**
- * @brief [TODO:description]
- */
-void ppogatt_client_init(void);
+void comm_session_init(void);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* ppogatt_client_h */
+#endif /* comm_session_h */

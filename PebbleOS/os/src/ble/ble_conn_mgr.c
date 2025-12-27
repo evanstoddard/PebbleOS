@@ -23,7 +23,7 @@
 
 #include "ble_advertising.h"
 #include "services/pairing_service/ble_pairing_service.h"
-#include "services/ppogatt/ble_ppogatt_service.h"
+#include "services/ppogatt/ppogatt_client.h"
 
 /*****************************************************************************
  * Definitions
@@ -45,16 +45,20 @@ static struct {
 
   sys_slist_t clients;
 
-  /* Discovery state */
   struct {
-    struct bt_gatt_discover_params params;
     ble_client_t *current_client;
+
+    struct bt_gatt_discover_params params;
+
     uint16_t service_start_handle;
     uint16_t service_end_handle;
+
     uint16_t resume_handle;
+
     uint16_t char_handles[MAX_CHARS_PER_CLIENT];
     uint8_t chars_found;
   } discovery;
+
 } prv_inst;
 
 /*****************************************************************************
@@ -69,11 +73,13 @@ static struct {
  */
 static ble_client_t *prv_find_client_by_service_uuid(const struct bt_uuid *uuid) {
   ble_client_t *client;
+
   SYS_SLIST_FOR_EACH_CONTAINER(&prv_inst.clients, client, node) {
     if (bt_uuid_cmp(client->service_uuid, uuid) == 0) {
       return client;
     }
   }
+
   return NULL;
 }
 
@@ -85,6 +91,7 @@ static ble_client_t *prv_find_client_by_service_uuid(const struct bt_uuid *uuid)
  */
 static int prv_find_char_index(const struct bt_uuid *uuid) {
   ble_client_t *client = prv_inst.discovery.current_client;
+
   if (client == NULL) {
     return -1;
   }
@@ -94,6 +101,7 @@ static int prv_find_char_index(const struct bt_uuid *uuid) {
       return i;
     }
   }
+
   return -1;
 }
 
@@ -185,24 +193,29 @@ static uint8_t prv_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *
       LOG_INF("Service discovery complete");
     } else if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
       ble_client_t *client = prv_inst.discovery.current_client;
+
       if (client != NULL && prv_inst.discovery.chars_found == client->num_chars) {
         LOG_INF("All %d characteristics found for %s", client->num_chars, client->client_name);
+
         if (client->on_service_discovered != NULL) {
-          client->on_service_discovered(prv_inst.discovery.char_handles);
+          client->on_service_discovered(prv_inst.discovery.char_handles,
+                                        prv_inst.discovery.service_end_handle);
         }
       } else if (client != NULL) {
-        LOG_WRN("Only found %d of %d characteristics for %s",
-                prv_inst.discovery.chars_found, client->num_chars, client->client_name);
+        LOG_WRN("Only found %d of %d characteristics for %s", prv_inst.discovery.chars_found,
+                client->num_chars, client->client_name);
       }
 
       prv_inst.discovery.current_client = NULL;
 
       /* Resume service discovery to find services for other clients */
       int err = prv_resume_service_discovery(conn);
+
       if (err) {
         LOG_ERR("Failed to resume service discovery: %d", err);
       }
     }
+
     return BT_GATT_ITER_STOP;
   }
 
@@ -226,6 +239,7 @@ static uint8_t prv_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *
 
       return BT_GATT_ITER_STOP;
     }
+
   } else if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
     struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)attr->user_data;
 
@@ -258,9 +272,12 @@ static void prv_on_security_changed(struct bt_conn *conn, bt_security_t level,
 
   LOG_INF("Security changed: level %d", level);
 
-  int ret = prv_start_service_discovery(conn);
-  if (ret) {
-    LOG_ERR("Failed to start service discovery: %d", ret);
+  // Kick of discovery after security has been elevated indicating bonded
+  if (level >= BT_SECURITY_L2) {
+    int ret = prv_start_service_discovery(conn);
+    if (ret) {
+      LOG_ERR("Failed to start service discovery: %d", ret);
+    }
   }
 }
 
@@ -294,7 +311,7 @@ int ble_conn_mgr_init(void) {
   settings_load();
 
   ble_pairing_service_init();
-  ble_ppogatt_service_init();
+  ppogatt_client_init();
 
   return 0;
 }

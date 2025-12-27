@@ -1,3 +1,3 @@
 target_sources(app PRIVATE
-  ppogatt_client.c
+  comm_session.c
 )

@@ -3,15 +3,13 @@
  */
 
 /**
- * @file ble_ppogatt_service.h
+ * @file common_services.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef ble_ppogatt_service_h
-#define ble_ppogatt_service_h
-
-#include <stdint.h>
+#ifndef common_services_h
+#define common_services_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,28 +29,12 @@ extern "C" {
 
 /**
  * @brief [TODO:description]
- *
- * @return [TODO:return]
  */
-int ble_ppogatt_service_init(void);
+void common_services_early_init(void);
 
-/**
- * @brief [TODO:description]
- *
- * @return [TODO:return]
- */
-int ble_ppogatt_fetch_meta_data(void);
-
-/**
- * @brief [TODO:description]
- *
- * @param buf [TODO:parameter]
- * @param len [TODO:parameter]
- * @return [TODO:return]
- */
-int ble_ppogatt_write_data(const void *buf, uint16_t len);
+void common_services_init(void);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* ble_ppogatt_service_h */
+#endif /* common_services_h */

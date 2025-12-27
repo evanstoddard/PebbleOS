@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include "utils/uuid.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +35,18 @@ typedef enum {
 } PPoGATT_Packet_Type_t;
 
 /**
+ * @typedef PPoGATT_Meta_t
+ * @brief [TODO:description]
+ *
+ */
+typedef struct PPoGATT_Meta_t {
+  uint8_t min_version;
+  uint8_t max_version;
+  Uuid_t app_uuid;
+  uint8_t session_type;
+} __attribute__((__packed__)) PPoGATT_Meta_t;
+
+/**
  * @typedef PPoGATT_Packet_Header_t
  * @brief [TODO:description]
  *
@@ -41,6 +55,12 @@ typedef struct PPoGATT_Packet_Header_t {
   PPoGATT_Packet_Type_t type : 3;
   uint8_t sn : 5;
 } __attribute__((__packed__)) PPoGATT_Packet_Header_t;
+
+typedef struct PPoGATT_Reset_Packet_t {
+  PPoGATT_Packet_Header_t header;
+  uint8_t version;
+  char serial_num[12];
+} __attribute__((__packed__)) PPoGATT_Reset_Packet_t;
 
 /*****************************************************************************
  * Function Prototypes

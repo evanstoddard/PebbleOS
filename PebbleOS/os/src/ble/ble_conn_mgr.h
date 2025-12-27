@@ -48,8 +48,9 @@ typedef struct ble_client_t {
   uint8_t num_chars;
 
   /* Called when service is discovered with all required characteristics.
-   * char_handles array is ordered to match char_uuids. */
-  void (*on_service_discovered)(uint16_t *char_handles);
+   * char_handles array is ordered to match char_uuids.
+   * service_end_handle is the last handle in the service (for CCCD discovery). */
+  void (*on_service_discovered)(uint16_t *char_handles, uint16_t service_end_handle);
 
   /* Called when service is removed or connection lost */
   void (*on_service_removed)(void);
