@@ -56,11 +56,22 @@ typedef struct PPoGATT_Packet_Header_t {
   uint8_t sn : 5;
 } __attribute__((__packed__)) PPoGATT_Packet_Header_t;
 
+/**
+ * @typedef PPoGATT_Reset_Packet_t
+ * @brief [TODO:description]
+ *
+ */
 typedef struct PPoGATT_Reset_Packet_t {
   PPoGATT_Packet_Header_t header;
   uint8_t version;
   char serial_num[12];
 } __attribute__((__packed__)) PPoGATT_Reset_Packet_t;
+
+typedef struct PPoGATT_Reset_Complete_Packet_t {
+  PPoGATT_Packet_Header_t header;
+  uint8_t max_rx_window;
+  uint8_t max_tx_window;
+} __attribute__((__packed__)) PPoGATT_Reset_Complete_Packet_t;
 
 /*****************************************************************************
  * Function Prototypes

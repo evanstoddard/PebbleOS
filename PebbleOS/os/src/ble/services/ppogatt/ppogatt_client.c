@@ -25,6 +25,8 @@
 
 #include "ble/ble_conn_mgr.h"
 
+#include "services/common/comm_session/comm_session.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -107,9 +109,109 @@ static uint8_t prv_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_para
                              const void *buf, uint16_t len);
 
 /*****************************************************************************
+ * Transport Prototypes
+ *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ */
+static void prv_transport_send_next(Transport *transport);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ */
+static void prv_transport_close(Transport *transport);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ */
+static void prv_transport_reset(Transport *transport);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ * @return [TODO:return]
+ */
+static const Uuid_t *prv_transport_get_uuid(Transport *transport);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ * @return [TODO:return]
+ */
+static CommSessionTransportType_t prv_transport_get_type(Transport *transport);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ * @return [TODO:return]
+ */
+static bool prv_transport_schedule(CommSession_t *session);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param transport [TODO:parameter]
+ * @return [TODO:return]
+ */
+static bool prv_transport_is_current_task_schedule_task(Transport *transport);
+
+/**
+ * @brief Transport implementation bindings
+ */
+static const TransportImplementation_t prv_transport_implementation = {
+    .send_next = prv_transport_send_next,
+    .close = prv_transport_close,
+    .reset = prv_transport_reset,
+    .get_uuid = prv_transport_get_uuid,
+    .get_type = prv_transport_get_type,
+    .schedule = prv_transport_schedule,
+    .is_current_task_schedule_task = prv_transport_is_current_task_schedule_task};
+
+/*****************************************************************************
  * Private Functions
  *****************************************************************************/
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param header [TODO:parameter]
+ */
+static void prv_handle_reset_complete_packet(PPoGATT_Client_t *client,
+                                             PPoGATT_Packet_Header_t *header) {
+  if (client->state != PPoGATT_CLIENT_STATE_CONNECTED_CLOSED_AWAIT_SELF_RESET_COMPLETE) {
+    /* FIXME: Destroy Client? */
+    return;
+  }
+
+  client->comm_session =
+      comm_session_open((Transport *)client, &prv_transport_implementation, client->transport_dest);
+
+  if (client->comm_session == NULL) {
+    LOG_ERR("Failed to open comm session.");
+    prv_destroy_client(client);
+    return;
+  }
+
+  LOG_INF("Comm session created!");
+  client->state = PPoGATT_CLIENT_STATE_CONNECTED_OPEN;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ */
 static void prv_write_reset_packet(PPoGATT_Client_t *client) {
   PPoGATT_Reset_Packet_t packet;
   packet.header.type = PPoGATT_PACKET_TYPE_RESET;
@@ -207,6 +309,12 @@ static uint8_t prv_on_meta_read(struct bt_conn *conn, uint8_t err,
       "\tMax Version: %u\r\n",
       client->meta.min_version, client->meta.max_version);
 
+  if (uuid_is_system(&client->meta.app_uuid) == true) {
+    client->transport_dest = TRANSPORT_SYSTEM;
+  } else {
+    client->transport_dest = TRANSPORT_APP;
+  }
+
   prv_client_subscribe(client);
 
   return BT_GATT_ITER_STOP;
@@ -223,8 +331,6 @@ static int prv_fetch_metadata(PPoGATT_Client_t *client) {
   client->read_params.single.offset = 0;
   client->read_params.single.handle = client->ble_handles.meta_handle;
   client->read_params.func = prv_on_meta_read;
-
-  LOG_INF("Reading from handle: 0x%04X", client->ble_handles.meta_handle);
 
   int ret = bt_gatt_read(prv_inst.conn, &client->read_params);
 
@@ -289,7 +395,26 @@ static uint8_t prv_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_para
 
   PPoGATT_Client_t *client = CONTAINER_OF(params, PPoGATT_Client_t, subscribe_params);
 
-  LOG_HEXDUMP_INF(buf, len, "PPoGATT Data Notification:");
+  switch (header->type) {
+    case PPoGATT_PACKET_TYPE_RESET:
+      LOG_INF("Received reset packet.");
+      break;
+    case PPoGATT_PACKET_TYPE_DATA:
+      LOG_INF("Received data packet.");
+      break;
+    case PPoGATT_PACKET_TYPE_ACK:
+      LOG_INF("Received ACK packet.");
+      break;
+    case PPoGATT_PACKET_TYPE_RESET_COMPLETE:
+      prv_handle_reset_complete_packet(client, header);
+      break;
+    default:
+      LOG_ERR("Received unexpected packet type: 0x%02X", header->type);
+      /*
+       * FIXME: Destroy client?
+       */
+      break;
+  }
 
   return BT_GATT_ITER_CONTINUE;
 }
@@ -307,13 +432,6 @@ static void prv_on_service_discovered(uint16_t *handles, uint16_t service_end_ha
     LOG_ERR("Failed to create client.");
     return;
   }
-
-  LOG_INF(
-      "Service discovered:\r\n"
-      "\tMeta Handle: 0x%04X\r\n"
-      "\tData Handle: 0x%04X\r\n"
-      "\tService End Handle: 0x%04X\r\n",
-      handles[PPOGATT_CHAR_META], handles[PPOGATT_CHAR_DATA], service_end_handle);
 
   client->ble_handles.data_handle = handles[PPOGATT_CHAR_DATA];
   client->ble_handles.meta_handle = handles[PPOGATT_CHAR_META];
@@ -364,6 +482,43 @@ static void prv_on_disconnected(struct bt_conn *conn, uint8_t err) {
 
   bt_conn_unref(prv_inst.conn);
   prv_inst.conn = NULL;
+}
+
+/*****************************************************************************
+ * Transport Functions
+ *****************************************************************************/
+
+static void prv_transport_send_next(Transport *transport) {
+  // TODO: Do this
+}
+
+static void prv_transport_close(Transport *transport) {
+  // TODO: Do this
+}
+
+static void prv_transport_reset(Transport *transport) {
+  // TODO: Do this
+}
+
+static const Uuid_t *prv_transport_get_uuid(Transport *transport) {
+  // TODO: Do this
+
+  return NULL;
+}
+
+static CommSessionTransportType_t prv_transport_get_type(Transport *transport) {
+  // TODO: Do this
+  return 0xFF;
+}
+
+static bool prv_transport_schedule(CommSession_t *session) {
+  // TODO: Do this
+  return false;
+}
+
+static bool prv_transport_is_current_task_schedule_task(Transport *transport) {
+  // TODO: Do this
+  return false;
 }
 
 /*****************************************************************************

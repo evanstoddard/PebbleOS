@@ -25,6 +25,12 @@ extern "C" {
  * Definitions
  *****************************************************************************/
 
+#define UUID_SYSTEM ((Uuid_t){0})
+
+#define UUID_INVALID                                                                            \
+  ((Uuid_t){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, \
+            0xFF, 0xFF})
+
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
@@ -70,6 +76,12 @@ static inline bool uuid_equal(Uuid_t *first, Uuid_t *second) {
   }
 
   return (memcmp(first, second, sizeof(Uuid_t)) == 0);
+}
+
+static inline bool uuid_is_system(Uuid_t *uuid) {
+  Uuid_t system_uuid = UUID_SYSTEM;
+
+  return (memcmp(uuid, &system_uuid, sizeof(Uuid_t)) == 0);
 }
 
 #ifdef __cplusplus
