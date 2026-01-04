@@ -138,8 +138,8 @@ static SessionSendQueueJobImpl_t prv_send_queue_job_impl = {
  * @param timeout [TODO:parameter]
  * @return [TODO:return]
  */
-SendBuffer_t *prv_send_buffer_create(CommSession_t *session, size_t payload_len_bytes,
-                                     uint16_t endpoint_id, k_timeout_t timeout) {
+static SendBuffer_t *prv_send_buffer_create(CommSession_t *session, size_t payload_len_bytes,
+                                            uint16_t endpoint_id, k_timeout_t timeout) {
   /* NOTE: Original implementation asserted the bt_lock was held.  Curious if that is needed here...
    * Will revisit locking across entire comm session subsystem later... famous last words... */
 
@@ -166,8 +166,29 @@ SendBuffer_t *prv_send_buffer_create(CommSession_t *session, size_t payload_len_
  *
  * @param buffer [TODO:parameter]
  */
-void prv_send_buffer_destroy(SendBuffer_t *buffer) {
+static void prv_send_buffer_destroy(SendBuffer_t *buffer) {
   k_heap_free(&prv_buf_heap, buffer);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_buffer [TODO:parameter]
+ * @return [TODO:return]
+ */
+static size_t prv_get_remaining_length_bytes(const SendBuffer_t *send_buffer) {
+  return (sizeof(PebbleProtocolHeader_t) + send_buffer->written_len_bytes -
+          send_buffer->consumed_len_bytes);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_buffer [TODO:parameter]
+ * @return [TODO:return]
+ */
+static const uint8_t *prv_get_read_pointer(const SendBuffer_t *send_buffer) {
+  return ((const uint8_t *)&send_buffer->header + send_buffer->consumed_len_bytes);
 }
 
 /*****************************************************************************
@@ -175,22 +196,41 @@ void prv_send_buffer_destroy(SendBuffer_t *buffer) {
  *****************************************************************************/
 
 static size_t prv_job_get_len(const SessionSendQueueJob_t *send_job) {
-  return 0;
+  SendBuffer_t *buf = (SendBuffer_t *)send_job;
+
+  return prv_get_remaining_length_bytes(buf);
 }
 
 static size_t prv_job_copy(const SessionSendQueueJob_t *send_job, int start_offset, size_t length,
                            uint8_t *data_out) {
-  return 0;
+  SendBuffer_t *buf = (SendBuffer_t *)send_job;
+
+  const size_t remaining_len = prv_get_remaining_length_bytes(buf);
+  const size_t len_after_offset = (remaining_len - start_offset);
+  const size_t length_to_copy = MIN(len_after_offset, length);
+
+  memcpy(data_out, prv_get_read_pointer(buf), length_to_copy);
+
+  return length_to_copy;
 }
 
 static size_t prv_job_get_read_pointer(const SessionSendQueueJob_t *send_job,
                                        const uint8_t **data_out) {
-  return 0;
+  SendBuffer_t *buf = (SendBuffer_t *)(send_job);
+
+  *data_out = prv_get_read_pointer(buf);
+
+  return prv_get_remaining_length_bytes(buf);
 }
 
-static void prv_job_consume(const SessionSendQueueJob_t *send_job, size_t length) {}
+static void prv_job_consume(const SessionSendQueueJob_t *send_job, size_t length) {
+  SendBuffer_t *buf = (SendBuffer_t *)send_job;
+  buf->consumed_len_bytes += length;
+}
 
-static void prv_job_free(SessionSendQueueJob_t *send_job) {}
+static void prv_job_free(SessionSendQueueJob_t *send_job) {
+  prv_send_buffer_destroy((SendBuffer_t *)send_job);
+}
 
 /*****************************************************************************
  * Functions
