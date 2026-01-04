@@ -3,15 +3,13 @@
  */
 
 /**
- * @file main_event_loop.h
+ * @file comm_default_kernel_sender.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef main_event_loop_h
-#define main_event_loop_h
-
-#include "events.h"
+#ifndef comm_default_kernel_sender_h
+#define comm_default_kernel_sender_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,20 +27,7 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
-/**
- * @brief Entry point for main event loop
- */
-void main_event_loop(void);
-
-/**
- * @brief [TODO:description]
- *
- * @param callback [TODO:parameter]
- * @param data [TODO:parameter]
- */
-void main_event_loop_add_callback_event(PebbleCallbackFunction_t callback, void *data);
-
 #ifdef __cplusplus
 }
 #endif
-#endif /* main_event_loop_h */
+#endif /* comm_default_kernel_sender_h */

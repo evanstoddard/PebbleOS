@@ -120,29 +120,30 @@ int events_put_event(PebbleEvent_t *event) {
 
   PebbleThread_t *calling_thread = pebble_thread_current_thread();
 
-  if (calling_thread == NULL) {
-    // TODO: WTF
-    return -EIO;
-  }
-
   struct k_msgq *queue = NULL;
-
-  switch (calling_thread->type) {
-    case PebbleThread_KernelMain:
-      queue = &prv_inst.from_kernel_event_queue;
-      break;
-    case PebbleThread_App:
-      queue = &prv_inst.from_app_event_queue;
-      break;
-    case PebbleThread_Worker:
-      queue = &prv_inst.from_worker_event_queue;
-      break;
-    case PebbleThread_KernelBackground:
-      queue = &prv_inst.kernel_event_queue;
-      break;
-    default:
-      // TODO: WTF
-      return -EIO;
+  // FIXME: Should probably rethink how I architected threads here.  Threads spun up by zephyr
+  // (System Work Queue, BLE threads, etc) won't have the associated PebbleThread_t metadata, so
+  // this will be null, unless we attach it.  For now, just blindly queuing to kernel queue
+  if (calling_thread == NULL) {
+    queue = &prv_inst.kernel_event_queue;
+  } else {
+    switch (calling_thread->type) {
+      case PebbleThread_KernelMain:
+        queue = &prv_inst.from_kernel_event_queue;
+        break;
+      case PebbleThread_App:
+        queue = &prv_inst.from_app_event_queue;
+        break;
+      case PebbleThread_Worker:
+        queue = &prv_inst.from_worker_event_queue;
+        break;
+      case PebbleThread_KernelBackground:
+        queue = &prv_inst.kernel_event_queue;
+        break;
+      default:
+        // TODO: WTF
+        return -EIO;
+    }
   }
 
   if (queue == NULL) {

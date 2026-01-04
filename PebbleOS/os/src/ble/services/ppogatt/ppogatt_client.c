@@ -301,15 +301,17 @@ static uint8_t prv_on_meta_read(struct bt_conn *conn, uint8_t err,
     return BT_GATT_ITER_STOP;
   }
 
-  memcpy(&client->meta, data, len);
+  PPoGATT_Meta_t *meta = (PPoGATT_Meta_t *)data;
 
   LOG_INF(
       "Fetched PPoGATT Session Meta:\r\n"
       "\tMin Version: %u\r\n"
       "\tMax Version: %u\r\n",
-      client->meta.min_version, client->meta.max_version);
+      meta->min_version, meta->max_version);
 
-  if (uuid_is_system(&client->meta.app_uuid) == true) {
+  memcpy(&client->app_uuid, &meta->app_uuid, sizeof(Uuid_t));
+
+  if (uuid_is_system(&client->app_uuid) == true) {
     client->transport_dest = TRANSPORT_SYSTEM;
   } else {
     client->transport_dest = TRANSPORT_APP;
@@ -501,14 +503,11 @@ static void prv_transport_reset(Transport *transport) {
 }
 
 static const Uuid_t *prv_transport_get_uuid(Transport *transport) {
-  // TODO: Do this
-
-  return NULL;
+  return &((PPoGATT_Client_t *)transport)->app_uuid;
 }
 
 static CommSessionTransportType_t prv_transport_get_type(Transport *transport) {
-  // TODO: Do this
-  return 0xFF;
+  return CommSessionTransportType_PPoGATT;
 }
 
 static bool prv_transport_schedule(CommSession_t *session) {

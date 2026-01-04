@@ -79,8 +79,6 @@ typedef struct PPoGATT_Client_t {
   struct bt_gatt_subscribe_params subscribe_params;
   struct bt_gatt_discover_params ccc_disc_params;
 
-  PPoGATT_Meta_t meta;
-
   uint8_t version;
 
   /*

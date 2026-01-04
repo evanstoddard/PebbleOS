@@ -17,6 +17,8 @@
 
 #include "session_internal.h"
 
+#include "session_remote_version.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -58,6 +60,8 @@ CommSession_t *comm_session_open(Transport *transport,
   session->destination = destination;
 
   sys_slist_prepend(&prv_inst.sessions, (sys_snode_t *)session);
+
+  session_remote_version_start_requests(session);
 
   return session;
 }

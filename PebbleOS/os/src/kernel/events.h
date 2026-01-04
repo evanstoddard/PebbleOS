@@ -112,13 +112,27 @@ typedef enum {
   PEBBLE_NUM_EVENTS
 } PebbleEventType;
 
+typedef void (*PebbleCallbackFunction_t)(void *data);
+
+/**
+ * @typedef PebbleCallbackEvent_t
+ * @brief [TODO:description]
+ *
+ */
+typedef struct PebbleCallbackEvent_t {
+  void (*callback)(void *data);
+  void *data;
+} __attribute__((__packed__)) PebbleCallbackEvent_t;
+
 /**
  * @typedef PebbleEvent_t
  * @brief Event definition
  *
  */
 typedef struct PebbleEvent_t {
-  union __attribute__((__packed__)) {};
+  union __attribute__((__packed__)) {
+    PebbleCallbackEvent_t callback;
+  };
 
   uint16_t event_bitmask;
   PebbleEventType event_type : 8;

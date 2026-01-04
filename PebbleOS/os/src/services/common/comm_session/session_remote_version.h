@@ -3,15 +3,15 @@
  */
 
 /**
- * @file main_event_loop.h
+ * @file session_remote_version.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef main_event_loop_h
-#define main_event_loop_h
+#ifndef session_remote_version_h
+#define session_remote_version_h
 
-#include "events.h"
+#include "session_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,19 +30,13 @@ extern "C" {
  *****************************************************************************/
 
 /**
- * @brief Entry point for main event loop
- */
-void main_event_loop(void);
-
-/**
  * @brief [TODO:description]
  *
- * @param callback [TODO:parameter]
- * @param data [TODO:parameter]
+ * @param session [TODO:parameter]
  */
-void main_event_loop_add_callback_event(PebbleCallbackFunction_t callback, void *data);
+void session_remote_version_start_requests(CommSession_t *session);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* main_event_loop_h */
+#endif /* session_remote_version_h */

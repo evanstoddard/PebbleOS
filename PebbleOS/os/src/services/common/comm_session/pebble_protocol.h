@@ -3,15 +3,15 @@
  */
 
 /**
- * @file main_event_loop.h
+ * @file pebble_protocol.h
  * @author Evan Stoddard
  * @brief
  */
 
-#ifndef main_event_loop_h
-#define main_event_loop_h
+#ifndef pebble_protocol_h
+#define pebble_protocol_h
 
-#include "events.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,24 +25,16 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
+typedef struct PebbleProtocolHeader_t {
+  uint16_t length;
+  uint16_t endpoint_id;
+} __attribute__((__packed__)) PebbleProtocolHeader_t;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
 
-/**
- * @brief Entry point for main event loop
- */
-void main_event_loop(void);
-
-/**
- * @brief [TODO:description]
- *
- * @param callback [TODO:parameter]
- * @param data [TODO:parameter]
- */
-void main_event_loop_add_callback_event(PebbleCallbackFunction_t callback, void *data);
-
 #ifdef __cplusplus
 }
 #endif
-#endif /* main_event_loop_h */
+#endif /* pebble_protocol_h */

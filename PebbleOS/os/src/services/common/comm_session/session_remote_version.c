@@ -3,22 +3,22 @@
  */
 
 /**
- * @file main_event_loop.c
+ * @file session_remote_version.c
  * @author Evan Stoddard
  * @brief
  */
 
-#include "main_event_loop.h"
+#include "session_remote_version.h"
 
 #include <zephyr/logging/log.h>
 
-#include "events.h"
+#include "kernel/main_event_loop.h"
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
-LOG_MODULE_REGISTER(main_event_loop);
+LOG_MODULE_REGISTER(session_remote_version);
 
 /*****************************************************************************
  * Variables
@@ -31,41 +31,22 @@ LOG_MODULE_REGISTER(main_event_loop);
 /**
  * @brief [TODO:description]
  *
- * @param event [TODO:parameter]
+ * @param data [TODO:parameter]
  */
-static void prv_minimal_event_handler(PebbleEvent_t *event) {
-  switch (event->event_type) {
-    case PEBBLE_CALLBACK_EVENT:
-      event->callback.callback(event->callback.data);
-      break;
-    default:
-      break;
-  }
+static void prv_perform_version_request(void *data) {
+  CommSession_t *session = (CommSession_t *)data;
+
+  LOG_INF("Performing version request in main thread.");
 }
 
 /*****************************************************************************
  * Functions
  *****************************************************************************/
 
-void main_event_loop(void) {
-  static PebbleEvent_t event = {};
-
-  while (true) {
-    if (events_take(&event, CONFIG_MAIN_EVENT_LOOP_TAKE_TIMEOUT_MS) != 0) {
-      continue;
-    }
-
-    prv_minimal_event_handler(&event);
-  }
-}
-
-void main_event_loop_add_callback_event(PebbleCallbackFunction_t callback, void *data) {
-  if (callback == NULL) {
+void session_remote_version_start_requests(CommSession_t *session) {
+  if (session == NULL) {
     return;
   }
 
-  PebbleEvent_t event = {
-      .event_type = PEBBLE_CALLBACK_EVENT, .callback.callback = callback, .callback.data = data};
-
-  events_put_event(&event);
+  main_event_loop_add_callback_event(prv_perform_version_request, session);
 }
