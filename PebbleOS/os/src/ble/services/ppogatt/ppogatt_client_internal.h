@@ -120,8 +120,6 @@ typedef struct PPoGATT_Client_t {
       uint8_t byte;
     } ack_packet;
 
-    /* TODO: I need to understand why there are 32 of these... I also need to
-     * get smarter */
     uint16_t payload_sizes[PPOGATT_SN_MOD_DIV];
     uint8_t rx_window_size;
     uint8_t tx_window_size;

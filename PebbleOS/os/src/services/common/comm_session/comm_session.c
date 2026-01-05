@@ -15,6 +15,8 @@
 
 #include <zephyr/sys/slist.h>
 
+#include "kernel/main_event_loop.h"
+
 #include "session_internal.h"
 #include "session_send_buffer.h"
 #include "session_remote_version.h"
@@ -37,8 +39,29 @@ static struct {
 } prv_inst;
 
 /*****************************************************************************
- * Prototypes
+ * Private Functions
  *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ * @param is_callback [TODO:parameter]
+ */
+static void prv_send_next(CommSession_t *session, bool is_callback) {
+  if (is_callback) {
+    session->is_send_scheduled = false;
+  }
+
+  session->implementation->send_next(session->transport);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param data [TODO:parameter]
+ */
+static void prv_default_send_next_cb(void *data) {}
 
 /*****************************************************************************
  * Functions
@@ -72,9 +95,30 @@ void comm_session_init(void) {
   sys_slist_init(&prv_inst.sessions);
 }
 
+bool comm_session_send_data(CommSession_t *session, uint16_t endpoint_id, const uint8_t *data,
+                            size_t length, uint32_t timeout_ms) {
+  if (session == NULL) {
+    return false;
+  }
+
+  SendBuffer_t *sb = comm_session_send_buffer_begin_write(session, endpoint_id, length, timeout_ms);
+  if (sb == NULL) {
+    LOG_ERR("Failed to acquire send buffer.");
+    return false;
+  }
+
+  LOG_INF("Writing buffer...");
+
+  comm_session_send_buffer_write(sb, data, length);
+  comm_session_send_buffer_end_write(sb);
+  return true;
+}
+
 void comm_session_send_next(CommSession_t *session) {
+  LOG_INF("Attempting to queue message...");
+
   if (session->implementation->schedule == NULL) {
-    LOG_ERR("No schedule implementation set.");
+    main_event_loop_add_callback_event(prv_default_send_next_cb, session);
     return;
   }
 
@@ -82,4 +126,6 @@ void comm_session_send_next(CommSession_t *session) {
     LOG_ERR("Failed to schedule outbound message.");
     session->is_send_scheduled = true;
   }
+
+  LOG_INF("Queued outbound message...");
 }

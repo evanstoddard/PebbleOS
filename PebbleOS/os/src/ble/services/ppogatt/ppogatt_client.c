@@ -152,14 +152,6 @@ static CommSessionTransportType_t prv_transport_get_type(Transport *transport);
 /**
  * @brief [TODO:description]
  *
- * @param session [TODO:parameter]
- * @return [TODO:return]
- */
-static bool prv_transport_schedule(CommSession_t *session);
-
-/**
- * @brief [TODO:description]
- *
  * @param transport [TODO:parameter]
  * @return [TODO:return]
  */
@@ -174,7 +166,6 @@ static const TransportImplementation_t prv_transport_implementation = {
     .reset = prv_transport_reset,
     .get_uuid = prv_transport_get_uuid,
     .get_type = prv_transport_get_type,
-    .schedule = prv_transport_schedule,
     .is_current_task_schedule_task = prv_transport_is_current_task_schedule_task};
 
 /*****************************************************************************
@@ -490,9 +481,7 @@ static void prv_on_disconnected(struct bt_conn *conn, uint8_t err) {
  * Transport Functions
  *****************************************************************************/
 
-static void prv_transport_send_next(Transport *transport) {
-  // TODO: Do this
-}
+static void prv_transport_send_next(Transport *transport) {}
 
 static void prv_transport_close(Transport *transport) {
   // TODO: Do this
@@ -508,11 +497,6 @@ static const Uuid_t *prv_transport_get_uuid(Transport *transport) {
 
 static CommSessionTransportType_t prv_transport_get_type(Transport *transport) {
   return CommSessionTransportType_PPoGATT;
-}
-
-static bool prv_transport_schedule(CommSession_t *session) {
-  // TODO: Do this
-  return false;
 }
 
 static bool prv_transport_is_current_task_schedule_task(Transport *transport) {

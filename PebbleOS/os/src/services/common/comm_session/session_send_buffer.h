@@ -63,6 +63,11 @@ SendBuffer_t *comm_session_send_buffer_begin_write(CommSession_t *session, uint1
  */
 bool comm_session_send_buffer_write(SendBuffer_t *send_buffer, const uint8_t *data, size_t length);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_buffer [TODO:parameter]
+ */
 void comm_session_send_buffer_end_write(SendBuffer_t *send_buffer);
 
 #ifdef __cplusplus
