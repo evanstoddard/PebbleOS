@@ -16,7 +16,7 @@
 #include <zephyr/sys/slist.h>
 
 #include "session_internal.h"
-
+#include "session_send_buffer.h"
 #include "session_remote_version.h"
 
 /*****************************************************************************
@@ -59,6 +59,8 @@ CommSession_t *comm_session_open(Transport *transport,
   session->implementation = implementation;
   session->destination = destination;
 
+  sys_slist_init(&session->send_queue);
+
   sys_slist_prepend(&prv_inst.sessions, (sys_snode_t *)session);
 
   session_remote_version_start_requests(session);
@@ -68,4 +70,16 @@ CommSession_t *comm_session_open(Transport *transport,
 
 void comm_session_init(void) {
   sys_slist_init(&prv_inst.sessions);
+}
+
+void comm_session_send_next(CommSession_t *session) {
+  if (session->implementation->schedule == NULL) {
+    LOG_ERR("No schedule implementation set.");
+    return;
+  }
+
+  if (session->implementation->schedule(session)) {
+    LOG_ERR("Failed to schedule outbound message.");
+    session->is_send_scheduled = true;
+  }
 }

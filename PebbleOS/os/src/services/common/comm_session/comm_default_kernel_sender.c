@@ -44,7 +44,7 @@
 typedef struct SendBuffer_t {
   union {
     CommSession_t *sesson;
-    SessionSendQueueJob_t *job;
+    SessionSendQueueJob_t job;
   };
 
   size_t payload_buf_len_bytes;
@@ -235,3 +235,43 @@ static void prv_job_free(SessionSendQueueJob_t *send_job) {
 /*****************************************************************************
  * Functions
  *****************************************************************************/
+
+SendBuffer_t *comm_session_send_buffer_begin_write(CommSession_t *session, uint16_t endpoint_id,
+                                                   size_t required_free_length,
+                                                   uint32_t timeout_ms) {
+  // TODO: Handle case where this is called from BT thread in case no buffer space is available,
+  // because we can dequeue outbound messages until there is enough buffer space for incoming
+  // message.
+  return prv_send_buffer_create(session, required_free_length, endpoint_id, K_MSEC(timeout_ms));
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_buffer [TODO:parameter]
+ * @param data [TODO:parameter]
+ * @param length [TODO:parameter]
+ * @return [TODO:return]
+ */
+bool comm_session_send_buffer_write(SendBuffer_t *send_buffer, const uint8_t *data, size_t length) {
+  if ((send_buffer->payload_buf_len_bytes - send_buffer->written_len_bytes) < length) {
+    return false;
+  }
+
+  memcpy(send_buffer->payload + send_buffer->header.length + send_buffer->written_len_bytes, data,
+         length);
+  send_buffer->written_len_bytes += length;
+
+  return true;
+}
+
+void comm_session_send_buffer_end_write(SendBuffer_t *send_buffer) {
+  CommSession_t *session = send_buffer->sesson;
+
+  send_buffer->job = (const SessionSendQueueJob_t){
+      .impl = &prv_send_queue_job_impl,
+  };
+
+  send_buffer->header.length = sys_cpu_to_be16(send_buffer->written_len_bytes);
+  comm_session_send_queue_add_job(session, (SessionSendQueueJob_t **)&send_buffer);
+}

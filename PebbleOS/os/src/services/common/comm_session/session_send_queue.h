@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "comm_session.h"
+
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -67,6 +69,14 @@ typedef struct SessionSendQueueJob_t {
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ * @param job [TODO:parameter]
+ */
+void comm_session_send_queue_add_job(CommSession_t *session, SessionSendQueueJob_t **job);
 
 #ifdef __cplusplus
 }

@@ -83,6 +83,13 @@ CommSession_t *comm_session_open(Transport *transport,
                                  const TransportImplementation_t *implementation,
                                  Transport_Destination_t destination);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ */
+void comm_session_send_next(CommSession_t *session);
+
 #ifdef __cplusplus
 }
 #endif

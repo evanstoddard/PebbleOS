@@ -23,6 +23,13 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
+/**
+ * @typedef CommSession_t
+ * @brief Forward declaration of comm session
+ *
+ */
+typedef struct CommSession_t CommSession_t;
+
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
