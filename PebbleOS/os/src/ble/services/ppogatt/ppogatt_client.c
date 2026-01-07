@@ -21,11 +21,13 @@
 
 #include <zephyr/sys/slist.h>
 
+#include "ble/services/ppogatt/ppogatt_protocol_definitions.h"
 #include "ppogatt_client_internal.h"
 
 #include "ble/ble_conn_mgr.h"
 
 #include "services/common/comm_session/comm_session.h"
+#include "services/common/comm_session/session_send_queue.h"
 
 /*****************************************************************************
  * Definitions
@@ -169,6 +171,17 @@ static const TransportImplementation_t prv_transport_implementation = {
     .is_current_task_schedule_task = prv_transport_is_current_task_schedule_task};
 
 /*****************************************************************************
+ * Private Prototypes
+ *****************************************************************************/
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ */
+static void prv_send_next_packets(PPoGATT_Client_t *client);
+
+/*****************************************************************************
  * Private Functions
  *****************************************************************************/
 
@@ -223,6 +236,34 @@ static void prv_write_reset_packet(PPoGATT_Client_t *client) {
 }
 
 /**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param self_initiated [TODO:parameter]
+ */
+static void prv_enter_reset_state(PPoGATT_Client_t *client, bool self_initiated) {
+  client->recv_ctx.next_expected_sn = 0;
+
+  if (self_initiated) {
+    client->write_ctx.reset_packet.byte = true;
+    client->state = PPoGATT_CLIENT_STATE_CONNECTED_CLOSED_AWAIT_SELF_RESET_COMPLETE_STALLED;
+  }
+
+  prv_send_next_packets(client);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ */
+static void prv_start_reset(PPoGATT_Client_t *client) {
+  // TODO: A whole bunch of other stuff
+
+  prv_enter_reset_state(client, true);
+}
+
+/**
  * @brief Callback when subscription completes
  *
  * @param conn Connection
@@ -241,7 +282,7 @@ static void prv_subscribe_cb(struct bt_conn *conn, uint8_t err,
 
   LOG_INF("Subscribed to data characteristic");
 
-  prv_write_reset_packet(CONTAINER_OF(params, PPoGATT_Client_t, subscribe_params));
+  prv_start_reset(client);
 }
 
 /**
@@ -477,6 +518,343 @@ static void prv_on_disconnected(struct bt_conn *conn, uint8_t err) {
   prv_inst.conn = NULL;
 }
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @return [TODO:return]
+ */
+static bool prv_client_supports_enhanced_throughput(PPoGATT_Client_t *client) {
+  return (client->version >= 1);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param sn_begin_incl [TODO:parameter]
+ * @param sn_end_excl [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint32_t prv_sn_distance(uint8_t sn_begin_incl, uint32_t sn_end_excl) {
+  return ((uint32_t)PPOGATT_SN_MOD_DIV + sn_end_excl - sn_begin_incl) % PPOGATT_SN_MOD_DIV;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint32_t prv_num_packets_in_flight(const PPoGATT_Client_t *client) {
+  return prv_sn_distance(client->write_ctx.next_expected_ack_sn, client->write_ctx.next_data_sn);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param current_sn [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint32_t prv_next_sn(uint32_t current_sn) {
+  return (current_sn + 1) % PPOGATT_SN_MOD_DIV;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param sn [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint32_t prv_prev_sn(uint32_t sn) {
+  return ((PPOGATT_SN_MOD_DIV + sn - 1) % PPOGATT_SN_MOD_DIV);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint16_t prv_get_max_payload_size(const PPoGATT_Client_t *client) {
+  size_t size = 0;
+
+  // TODO: Fetch actual GATT MTU Size
+  size = 251;
+
+  size -= sizeof(PPoGATT_Packet_Header_t);
+
+  return size;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param sn [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint16_t prv_get_payload_size_for_sn(const PPoGATT_Client_t *client, uint32_t sn) {
+  return client->write_ctx.payload_sizes[sn];
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param sn [TODO:parameter]
+ * @return [TODO:return]
+ */
+static bool prv_is_packet_with_sn_awaiting_ack(const PPoGATT_Client_t *client, uint32_t sn) {
+  return (prv_get_payload_size_for_sn(client, sn) != 0);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param sn_end_excl [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint16_t prv_total_num_bytes_awaiting_ack_up_to(const PPoGATT_Client_t *client,
+                                                       uint32_t sn_end_excl) {
+  uint16_t num_bytes = 0;
+  for (uint32_t sn = client->write_ctx.next_expected_ack_sn; sn != sn_end_excl;
+       sn = prv_next_sn(sn)) {
+    num_bytes += prv_get_payload_size_for_sn(client, sn);
+  }
+  return num_bytes;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @return [TODO:return]
+ */
+static uint16_t prv_total_num_bytes_awaiting_ack(const PPoGATT_Client_t *client) {
+  return prv_total_num_bytes_awaiting_ack_up_to(client, client->write_ctx.next_data_sn);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param sn [TODO:parameter]
+ * @param payload_size [TODO:parameter]
+ */
+static void prv_set_payload_size_for_sn(PPoGATT_Client_t *client, uint32_t sn,
+                                        uint16_t payload_size) {
+  client->write_ctx.payload_sizes[sn] = payload_size;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param sn_end_excl [TODO:parameter]
+ */
+static void prv_clear_payload_sizes_up_to(PPoGATT_Client_t *client, uint32_t sn_end_excl) {
+  for (uint32_t sn = client->write_ctx.next_expected_ack_sn; sn != sn_end_excl;
+       sn = prv_next_sn(sn)) {
+    prv_set_payload_size_for_sn(client, sn, 0);
+  }
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param heap_packet_in_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+static PPoGATT_Packet_t *prv_lazily_allocate_packet_if_needed(
+    const PPoGATT_Client_t *client, PPoGATT_Packet_t **heap_packet_in_out) {
+  PPoGATT_Packet_t *packet = *heap_packet_in_out;
+
+  if (packet) {
+    return packet;
+  }
+
+  const uint16_t max_payload_size = prv_get_max_payload_size(client);
+  if (max_payload_size == 0) {
+    return NULL;
+  }
+
+  // FIXME: Again, k_malloc definitely a bad idea since it's not thread safe.  Will need to double
+  // check calling context and either guard system heap or use dedicated k_heap
+  packet = (PPoGATT_Packet_t *)k_malloc(sizeof(PPoGATT_Packet_t) + max_payload_size);
+  *heap_packet_in_out = packet;
+
+  return packet;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param packet_out [TODO:parameter]
+ * @param payload_size_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+static const PPoGATT_Packet_t *prv_prepare_reset_packet(PPoGATT_Client_t *client,
+                                                        PPoGATT_Packet_t **packet_out,
+                                                        uint16_t *payload_size_out) {
+  return NULL;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param packet_out [TODO:parameter]
+ * @param payload_size_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+static const PPoGATT_Packet_t *prv_prepare_next_packet(PPoGATT_Client_t *client,
+                                                       PPoGATT_Packet_t **packet_out,
+                                                       uint16_t *payload_size_out) {
+  if (client->write_ctx.reset_packet.byte) {
+    return prv_prepare_reset_packet(client, packet_out, payload_size_out);
+  }
+
+  if (client->write_ctx.ack_packet.byte) {
+    if (prv_client_supports_enhanced_throughput(client) == false) {
+      client->write_ctx.send_rx_ack_now = true;
+    } else {
+      client->write_ctx.outstanding_rx_ack_count++;
+      if ((++client->write_ctx.outstanding_rx_ack_count) > (client->write_ctx.rx_window_size / 2)) {
+        client->write_ctx.send_rx_ack_now = true;
+      }
+    }
+
+    if (client->write_ctx.send_rx_ack_now == true) {
+      // TODO: Handle ACK timer stuff...
+
+      *payload_size_out = 0;
+      return (PPoGATT_Packet_t *)&client->write_ctx.ack_packet.packet;
+    }
+  }
+
+  if (client->state != PPoGATT_CLIENT_STATE_CONNECTED_OPEN) {
+    return NULL;
+  }
+
+  if (prv_num_packets_in_flight(client) >= client->write_ctx.tx_window_size) {
+    return NULL;
+  }
+
+  uint16_t read_space = comm_session_send_queue_get_length(client->comm_session);
+  if (read_space == 0) {
+    return NULL;
+  }
+
+  uint16_t max_payload_size = prv_get_max_payload_size(client);
+  if (max_payload_size == 0) {
+    return NULL;
+  }
+
+  uint16_t offset = prv_total_num_bytes_awaiting_ack(client);
+  uint16_t payload_size = prv_get_payload_size_for_sn(client, client->write_ctx.next_data_sn);
+
+  if (payload_size == 0) {
+    payload_size = read_space - offset;
+
+    if (payload_size == 0) {
+      return NULL;
+    }
+
+    payload_size = MIN(payload_size, max_payload_size);
+  }
+
+  PPoGATT_Packet_t *packet = prv_lazily_allocate_packet_if_needed(client, packet_out);
+
+  if (!packet) {
+    return NULL;
+  }
+
+  packet->header.type = PPoGATT_PACKET_TYPE_DATA;
+  packet->header.sn = client->write_ctx.next_data_sn;
+
+  comm_session_send_queue_copy(client->comm_session, offset, payload_size, packet->payload);
+  *payload_size_out = payload_size;
+
+  return packet;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ */
+static void prv_send_next_packets_async(PPoGATT_Client_t *client) {
+  comm_session_send_next(client->comm_session);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ * @param payload_size [TODO:parameter]
+ */
+static void prv_finalize_queued_packet(PPoGATT_Client_t *client, uint16_t payload_size) {
+  if (client->write_ctx.reset_packet.byte != 0) {
+    client->write_ctx.reset_packet.byte = 0;
+  } else if (client->write_ctx.send_rx_ack_now && client->write_ctx.ack_packet.byte != 0) {
+    client->write_ctx.ack_packet.byte = 0;
+    client->write_ctx.send_rx_ack_now = false;
+    client->write_ctx.outstanding_rx_ack_count = 0;
+  } else {  // we are sending a data packet
+    const uint32_t sn = client->write_ctx.next_data_sn;
+    prv_set_payload_size_for_sn(client, sn, payload_size);
+
+    /* if (client->write_ctx.ack_timeout_state == AckTimeoutState_Inactive) { */
+    /*   prv_reset_ack_timeout(client);  // Enable timeout if we don't already have it set */
+    /* } */
+
+    client->write_ctx.next_data_sn = prv_next_sn(sn);
+  }
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param client [TODO:parameter]
+ */
+static void prv_send_next_packets(PPoGATT_Client_t *client) {
+  uint16_t payload_size = 0;
+
+  const PPoGATT_Packet_t *packet = NULL;
+  PPoGATT_Packet_t *heap_packet = NULL;
+
+  // Cap the number of times we loop here, to avoid blocking the task for too long.
+  uint8_t loop_count = 0;
+
+  while ((packet = prv_prepare_next_packet(client, &heap_packet, &payload_size))) {
+    ++loop_count;
+
+    int ret = bt_gatt_write_without_response(prv_inst.conn, client->ble_handles.data_handle, packet,
+                                             sizeof(PPoGATT_Packet_t) + payload_size, false);
+
+    if (ret != 0) {
+      break;
+    }
+
+    // Packet successfully queued
+    prv_finalize_queued_packet(client, payload_size);
+    const uint8_t max_loop_count = 10;
+    if (loop_count > max_loop_count) {
+      // If more bytes left to send (but loop_count became >= 10),
+      // schedule a callback to process them later to avoid blocking the task for too long:
+      prv_send_next_packets_async(client);
+      break;
+    }
+  }
+
+  if (heap_packet) {
+    k_free(heap_packet);
+  }
+}
+
 /*****************************************************************************
  * Transport Functions
  *****************************************************************************/
@@ -535,4 +913,12 @@ void ppogatt_client_init(void) {
   sys_slist_init(&prv_inst.clients);
 
   ble_conn_mgr_register_client(&prv_ble_client);
+}
+
+void ppogatt_client_send_next(struct Transport *transport) {
+  if (transport == NULL) {
+    return;
+  }
+
+  prv_send_next_packets((PPoGATT_Client_t *)transport);
 }

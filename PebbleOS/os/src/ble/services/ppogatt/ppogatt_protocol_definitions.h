@@ -56,6 +56,11 @@ typedef struct PPoGATT_Packet_Header_t {
   uint8_t sn : 5;
 } __attribute__((__packed__)) PPoGATT_Packet_Header_t;
 
+typedef struct PPoGATT_Packet_t {
+  PPoGATT_Packet_Header_t header;
+  uint8_t payload[];
+} __attribute__((__packed__)) PPoGATT_Packet_t;
+
 /**
  * @typedef PPoGATT_Reset_Packet_t
  * @brief [TODO:description]

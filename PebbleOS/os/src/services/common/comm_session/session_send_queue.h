@@ -78,6 +78,26 @@ typedef struct SessionSendQueueJob_t {
  */
 void comm_session_send_queue_add_job(CommSession_t *session, SessionSendQueueJob_t **job);
 
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ * @param start_offset [TODO:parameter]
+ * @param length [TODO:parameter]
+ * @param data_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+size_t comm_session_send_queue_copy(CommSession_t *session, uint32_t start_offset, size_t length,
+                                    uint8_t *data_out);
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param session [TODO:parameter]
+ * @return [TODO:return]
+ */
+size_t comm_session_send_queue_get_length(const CommSession_t *session);
+
 #ifdef __cplusplus
 }
 #endif
