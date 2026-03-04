@@ -8,4 +8,4 @@ source ${g_SCRIPT_DIR}/common.sh
 
 
 # Build default target with default board
-west flash -d build $@
+west flash -d build -r pyocd $@
