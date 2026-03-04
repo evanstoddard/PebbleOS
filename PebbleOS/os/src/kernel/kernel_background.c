@@ -1,20 +1,19 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
  * @file kernel_background.c
  * @author Evan Stoddard
- * @brief
+ * @brief Kernel background thread. Runs at a lower priority than the kernel
+ * main thread and is intended to handle deferred background work. Currently
+ * sleeps indefinitely as a placeholder.
  */
 
 #include "kernel_background.h"
+#include "pebble_thread.h"
 
-#include <errno.h>
 #include <stdbool.h>
-#include <stddef.h>
-
-#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 
@@ -28,12 +27,11 @@ LOG_MODULE_REGISTER(kernel_bg);
  * Variables
  *****************************************************************************/
 
-K_KERNEL_STACK_DEFINE(prv_thread_stack, CONFIG_KERNEL_BACKGROUND_STACK_SIZE);
-
+/**
+ * @brief Private module instance
+ */
 static struct {
-  PebbleTask_t thread;
-
-  bool initialized;
+  PebbleThread_t *thread;
 } prv_inst;
 
 /*****************************************************************************
@@ -41,14 +39,16 @@ static struct {
  *****************************************************************************/
 
 /**
- * @brief Kernel background thread entry
+ * @brief Kernel background thread entry point. Sleeps indefinitely, waking
+ * only when explicitly signalled by other kernel code to perform deferred work.
  *
- * @param arg Unused
+ * @param args Unused thread argument
  */
-static void prv_thread_entry(void *arg) {
+void prv_thread_entry(void *args) {
+  LOG_INF("Kernel background thread starting...");
+
   while (true) {
-    LOG_INF("Kernel BG tick...");
-    k_msleep(1000);
+    k_sleep(K_FOREVER);
   }
 }
 
@@ -57,29 +57,15 @@ static void prv_thread_entry(void *arg) {
  *****************************************************************************/
 
 int kernel_background_init(void) {
-  if (prv_inst.initialized == true) {
-    return -EALREADY;
-  }
+  prv_inst.thread = pebble_thread_create(PebbleThread_KernelBackground, "Kernel BG",
+                                         CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
+                                         CONFIG_KERNEL_BACKGROUND_PRIORITY, prv_thread_entry, NULL);
 
-  int ret = pebble_task_init(&prv_inst.thread, PebbleTask_KernelBackground,
-                             "Kernel BG", prv_thread_stack,
-                             CONFIG_KERNEL_BACKGROUND_STACK_SIZE,
-                             prv_thread_entry, NULL);
-
-  if (ret < 0) {
-    LOG_ERR("Failed to initialize kernel background thread: %d", ret);
-    return ret;
-  }
-
-  prv_inst.initialized = true;
+  __ASSERT(prv_inst.thread, "Unable to allocate kernel background thread.");
 
   return 0;
 }
 
-PebbleTask_t *kernel_background_thread(void) {
-  if (prv_inst.initialized == false) {
-    return NULL;
-  }
-
-  return &prv_inst.thread;
+PebbleThread_t *kernel_background_thread(void) {
+  return prv_inst.thread;
 }

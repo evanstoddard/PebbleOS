@@ -13,4 +13,4 @@ if [ ! -d ${g_ROOT_DIR}/.west ]; then
 fi
 
 # Build default target with default board
-west build --board=${g_DEFAULT_BUILD_BOARD} ${g_PROJECT_DIR}/${g_DEFAULT_BUILD_TARGET}
+west build --board=${g_DEFAULT_BUILD_BOARD} ${g_PROJECT_DIR}/${g_DEFAULT_BUILD_TARGET} $@

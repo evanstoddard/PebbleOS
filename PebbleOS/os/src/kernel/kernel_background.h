@@ -1,17 +1,17 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
  * @file kernel_background.h
  * @author Evan Stoddard
- * @brief Kernel background thread
+ * @brief Thread handling background kernel task
  */
 
 #ifndef kernel_background_h
 #define kernel_background_h
 
-#include "pebble_task.h"
+#include "pebble_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,20 +30,18 @@ extern "C" {
  *****************************************************************************/
 
 /**
- * @brief Initialize kernel background thread
+ * @brief Initialize background kernel thread
  *
- * @return Status of kernel background thread initialization
- * @retval 0 Successfully initialized kernel background thread
+ * @return Returns 0 on success
  */
 int kernel_background_init(void);
 
 /**
- * @brief Get pointer to kernel background thread instance
+ * @brief Get pointer to background kernel thread instance
  *
- * @return Pointer to kernel background thread
- * @retval NULL Kernel background thread not initialized
+ * @return Pointer to background kernel thread
  */
-PebbleTask_t *kernel_background_thread(void);
+PebbleThread_t *kernel_background_thread(void);
 
 #ifdef __cplusplus
 }

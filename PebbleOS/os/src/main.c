@@ -1,22 +1,25 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
  * @file main.c
- * @brief
+ * @brief Zephyr application entry point. Initializes the kernel heap and
+ * launches the kernel main thread.
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "kernel/kernel_main.h"
+#include "kernel/kernel_heap.h"
 
-LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+#include "kernel/kernel_main.h"
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+LOG_MODULE_REGISTER(main);
 
 /*****************************************************************************
  * Variables
@@ -31,16 +34,12 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
  *****************************************************************************/
 
 int main(void) {
-  LOG_INF("PebbleOS Booting...");
+  LOG_INF("Booting PebbleOS.");
 
-  int ret = kernel_main_init();
+  // Initialize kernel heap
+  kernel_heap_init();
 
-  if (ret < 0) {
-    LOG_ERR("Failed to initialize kernel main thread: %d", ret);
-    // TODO: Fatal error handling
-
-    return ret;
-  }
+  kernel_main_init();
 
   return 0;
 }

@@ -1,17 +1,17 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
  * @file kernel_main.h
  * @author Evan Stoddard
- * @brief Kernel main thread
+ * @brief Main kernel thread
  */
 
 #ifndef kernel_main_h
 #define kernel_main_h
 
-#include "pebble_task.h"
+#include "pebble_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,17 +32,17 @@ extern "C" {
 /**
  * @brief Initialize kernel main thread
  *
- * @return Return status of initialization
+ * @return Return value
+ * @retval 0 Success
  */
 int kernel_main_init(void);
 
 /**
- * @brief Return pointer to main kernel thread instance
+ * @brief Return pointer to kernel main thread instance
  *
- * @return Pointer to kernel thread instance
- * @retval NULL Kernel thread not initialized
+ * @return Pointer to kernel main thread instance
  */
-PebbleTask_t *kernel_main_thread(void);
+PebbleThread_t *kernel_main_thread(void);
 
 #ifdef __cplusplus
 }

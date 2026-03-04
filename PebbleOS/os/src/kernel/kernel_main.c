@@ -1,24 +1,24 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
  * @file kernel_main.c
  * @author Evan Stoddard
- * @brief Kernel main thread
+ * @brief Kernel main thread implementation. Bootstraps core OS services and
+ * runs the primary kernel event loop.
  */
 
 #include "kernel_main.h"
 
-#include <errno.h>
 #include <stdbool.h>
-#include <stddef.h>
-
-#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 
+#include "pebble_thread.h"
+
 #include "kernel_background.h"
+#include "main_event_loop.h"
 
 /*****************************************************************************
  * Definitions
@@ -30,15 +30,11 @@ LOG_MODULE_REGISTER(kernel_main);
  * Variables
  *****************************************************************************/
 
-static K_KERNEL_STACK_DEFINE(prv_thread_stack, CONFIG_KERNEL_MAIN_STACK_SIZE);
-
 /**
  * @brief Private instance
  */
 static struct {
-  PebbleTask_t thread;
-
-  bool initialized;
+  PebbleThread_t *thread;
 } prv_inst;
 
 /*****************************************************************************
@@ -46,30 +42,24 @@ static struct {
  *****************************************************************************/
 
 /**
- * @brief Initialization and setup for rest of the system
+ * @brief Bringing the rest of the threads and services for PebbleOS
  */
 static void prv_main_init(void) {
-
-  int ret = kernel_background_init();
-
-  if (ret < 0) {
-    // TODO: Fatal error handling
-    return;
-  }
+  kernel_background_init();
 }
 
 /**
- * @brief Kernel main thread entry
+ * @brief Kernel main thread entry point. Initializes OS services, then enters
+ * the main event loop which runs for the lifetime of the system.
  *
- * @param arg Unused args
+ * @param args Unused thread argument
  */
-static void prv_thread_entry(void *arg) {
-  prv_main_init();
+static void prv_thread_entry(void *args) {
+  (void)args;
 
-  while (true) {
-    LOG_INF("Kernel main tick...");
-    k_msleep(1000);
-  }
+  LOG_INF("Kernel Main Thread Starting...");
+  prv_main_init();
+  main_event_loop();
 }
 
 /*****************************************************************************
@@ -77,28 +67,15 @@ static void prv_thread_entry(void *arg) {
  *****************************************************************************/
 
 int kernel_main_init(void) {
-  if (prv_inst.initialized == true) {
-    return -EALREADY;
-  }
+  prv_inst.thread = pebble_thread_create(PebbleThread_KernelBackground, "Main Thread",
+                                         CONFIG_KERNEL_MAIN_STACK_SIZE, CONFIG_KERNEL_MAIN_PRIORITY,
+                                         prv_thread_entry, NULL);
 
-  int ret = pebble_task_init(
-      &prv_inst.thread, PebbleTask_KernelMain, "Kernel Main", prv_thread_stack,
-      CONFIG_KERNEL_MAIN_STACK_SIZE, prv_thread_entry, NULL);
-
-  if (ret < 0) {
-    LOG_ERR("Failed to initialize kernel main thread: %d", ret);
-    return ret;
-  }
-
-  prv_inst.initialized = true;
+  __ASSERT(prv_inst.thread, "Unable to allocate kernel main thread.");
 
   return 0;
 }
 
-PebbleTask_t *kernel_main_thread(void) {
-  if (prv_inst.initialized == false) {
-    return NULL;
-  }
-
-  return &prv_inst.thread;
+PebbleThread_t *kernel_main_thread(void) {
+  return prv_inst.thread;
 }

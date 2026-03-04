@@ -26,5 +26,29 @@ config KERNEL_BACKGROUND_PRIORITY
   default 5
 endmenu
 
+config MAX_KERNEL_EVENTS
+  int "Maximum kernel events."
+  default 32
+
+config MAX_FROM_APP_EVENTS
+  int "Maximum events from an app."
+  default 10
+
+config MAX_FROM_WORKER_EVENTS
+  int "Maximum events from a worker."
+  default 5
+
+config MAX_FROM_KERNEL_MAIN_EVENTS
+  int "Maximum events from main kernel."
+  default 14
+
+config EVENT_QUEUE_PUT_TIMEOUT_MS
+  int "Maximum time to block until event is put into queue."
+  default 3000
+
+config MAIN_EVENT_LOOP_TAKE_TIMEOUT_MS
+  int "Maximum time to block waiting for event."
+  default 1000
+
 module = APP
 module-str = APP
