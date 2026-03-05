@@ -13,6 +13,20 @@
             block-cycles = <512>;
         };
     };
+
+    fuel_gauge: fuel-gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&charger>;
+		/* Use SENSOR_CHAN_GAUGE_* channels from the npm1300 charger sensor */
+		fuel-gauge-channels;
+		/* LiPo OCV table: voltage (µV) at 0–100% SoC in 10% steps */
+		ocv-capacity-table-0 = <3270000 3360000 3430000 3530000 3620000
+		                        3720000 3810000 3900000 3980000 4050000
+		                        4150000>;
+		device-chemistry = "lithium-ion-polymer";
+		charge-full-design-microamp-hours = <130000>;
+	};
+
 };
 
 &gd25le255e {
@@ -23,7 +37,8 @@
 
 		lfs_partition: lfs_partition@0 {
 			label = "lfs_partition";
-			reg = <0x00000000 0x0008000>;
+			reg = <0x00000000 0x00100000>;
 		};
 	};
 };
+
