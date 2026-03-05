@@ -20,6 +20,9 @@
 #include "kernel_background.h"
 #include "main_event_loop.h"
 
+#include "ble/ble_advertising.h"
+#include "ble/ble_conn_mgr.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -46,6 +49,9 @@ static struct {
  */
 static void prv_main_init(void) {
   kernel_background_init();
+
+  ble_conn_mgr_init();
+  ble_advertising_begin();
 }
 
 /**
@@ -67,15 +73,14 @@ static void prv_thread_entry(void *args) {
  *****************************************************************************/
 
 int kernel_main_init(void) {
-  prv_inst.thread = pebble_thread_create(PebbleThread_KernelBackground, "Main Thread",
-                                         CONFIG_KERNEL_MAIN_STACK_SIZE, CONFIG_KERNEL_MAIN_PRIORITY,
-                                         prv_thread_entry, NULL);
+  prv_inst.thread =
+      pebble_thread_create(PebbleThread_KernelBackground, "Main Thread",
+                           CONFIG_KERNEL_MAIN_STACK_SIZE,
+                           CONFIG_KERNEL_MAIN_PRIORITY, prv_thread_entry, NULL);
 
   __ASSERT(prv_inst.thread, "Unable to allocate kernel main thread.");
 
   return 0;
 }
 
-PebbleThread_t *kernel_main_thread(void) {
-  return prv_inst.thread;
-}
+PebbleThread_t *kernel_main_thread(void) { return prv_inst.thread; }
