@@ -23,7 +23,7 @@
 
 		lfs_partition: lfs_partition@0 {
 			label = "lfs_partition";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 0x0008000>;
 		};
 	};
 };
