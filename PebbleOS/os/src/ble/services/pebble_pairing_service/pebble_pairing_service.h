@@ -1,15 +1,15 @@
 /*
- * Copyright (C) Ovyl
+ * Copyright (C) Evan Stoddard
  */
 
 /**
- * @file ble_uuid.h
+ * @file pebble_pairing_service.h
  * @author Evan Stoddard
- * @brief
+ * @brief Device hosted BLE service coordinate device pairing
  */
 
-#ifndef ble_uuid_h
-#define ble_uuid_h
+#ifndef pebble_pairing_service_h
+#define pebble_pairing_service_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,9 +19,6 @@ extern "C" {
  * Definitions
  *****************************************************************************/
 
-#define PEBBLE_BASE_UUID_BYTES \
-  0xDA, 0xDA, 0x9B, 0x69, 0xA6, 0x1A, 0x42, 0xC6, 0xBB, 0x0F, 0x8E, 0x32
-
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
@@ -30,7 +27,14 @@ extern "C" {
  * Function Prototypes
  *****************************************************************************/
 
+/**
+ * @brief Initialize Pebble pairing service
+ *
+ * @return Returns 0 on success
+ */
+int pebble_pairing_service_init(void);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* ble_uuid_h */
+#endif /* pebble_pairing_service_h */

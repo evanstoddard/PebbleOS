@@ -20,6 +20,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
+#include "pebble_bt.h"
+
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
@@ -72,7 +74,8 @@ static const struct bt_le_adv_param *prv_adv_params =
 static const struct bt_data prv_advertising_data[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 
-    BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xD9, 0xFE),  // 0xFED9 little-endian
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+                  BT_UUID_16_ENCODE(PEBBLE_BT_PAIRING_SERVICE_UUID_16BIT)),
 
     BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };

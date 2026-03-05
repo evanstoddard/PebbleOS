@@ -22,6 +22,7 @@
 #include <zephyr/settings/settings.h>
 
 #include "ble_advertising.h"
+#include "services/pebble_pairing_service/pebble_pairing_service.h"
 
 /*****************************************************************************
  * Definitions
@@ -88,6 +89,8 @@ int ble_conn_mgr_init(void) {
   // TODO: This should be moved once zephyr settings fully integrated with
   // Pebble OS
   settings_load();
+
+  pebble_pairing_service_init();
 
   return 0;
 }

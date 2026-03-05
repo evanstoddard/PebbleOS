@@ -1,0 +1,1 @@
+add_subdirectory(pebble_pairing_service)
