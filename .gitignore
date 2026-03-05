@@ -2,6 +2,5 @@
 .west
 modules
 /zephyr
-build
-build_sim
+/build*
 .cache

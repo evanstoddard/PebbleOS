@@ -1,0 +1,21 @@
+source "Kconfig.zephyr"
+
+config MAX_KERNEL_EVENTS
+	int "Maximum kernel events"
+	default 8
+
+config MAX_FROM_APP_EVENTS
+	int "Maximum events from an app"
+	default 4
+
+config MAX_FROM_WORKER_EVENTS
+	int "Maximum events from a worker"
+	default 4
+
+config MAX_FROM_KERNEL_MAIN_EVENTS
+	int "Maximum events from main kernel"
+	default 4
+
+config EVENT_QUEUE_PUT_TIMEOUT_MS
+	int "Maximum time to block until event is put into queue"
+	default 1000

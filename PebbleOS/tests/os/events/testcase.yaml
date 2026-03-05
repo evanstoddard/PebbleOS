@@ -1,0 +1,6 @@
+common:
+  tags:
+    - pebbleos
+    - kernel
+tests:
+  pebbleos.kernel.events: {}
