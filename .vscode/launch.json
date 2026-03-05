@@ -13,9 +13,9 @@
             "device": "nRF52840_xxAA",
             "runToEntryPoint": "main",
             "showDevDebugOutput": "none",
-            "servertype": "jlink",
+            "servertype": "pyocd",
             "loadFiles": [],
             "preLaunchTask": "Flash"
-        },
+        }
     ]
 }
