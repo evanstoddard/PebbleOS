@@ -1,1 +1,2 @@
 add_subdirectory(pebble_pairing_service)
+add_subdirectory(ppogatt_client)

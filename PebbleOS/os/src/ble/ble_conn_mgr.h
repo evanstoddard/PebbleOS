@@ -31,7 +31,7 @@ extern "C" {
 
 /**
  * @typedef ble_client_t
- * @brief [TODO:description]
+ * @brief BLE GATT client instance
  *
  */
 typedef struct ble_client_t {
@@ -51,8 +51,7 @@ typedef struct ble_client_t {
    * char_handles array is ordered to match char_uuids.
    * service_end_handle is the last handle in the service (for CCCD discovery).
    */
-  void (*on_service_discovered)(uint16_t *char_handles,
-                                uint16_t service_end_handle);
+  void (*on_service_discovered)(uint16_t *char_handles, uint16_t service_end_handle);
 
   /* Called when service is removed or connection lost */
   void (*on_service_removed)(void);
@@ -69,8 +68,7 @@ typedef struct ble_client_t {
   void (*on_notify)(uint16_t handle, const uint8_t *data, uint16_t len);
 
   /* Called on GATT read response for a characteristic this client owns */
-  void (*on_read)(uint16_t handle, const uint8_t *data, uint16_t len,
-                  uint8_t err);
+  void (*on_read)(uint16_t handle, const uint8_t *data, uint16_t len, uint8_t err);
 
   /* Called on GATT write response for a characteristic this client owns */
   void (*on_write)(uint16_t handle, uint8_t err);
@@ -89,6 +87,13 @@ typedef struct ble_client_t {
  * @return
  */
 int ble_conn_mgr_init(void);
+
+/**
+ * @brief Register GATT client
+ *
+ * @param client Pointer to client (must remain in scope)
+ */
+void ble_conn_mgr_register_client(ble_client_t *client);
 
 #ifdef __cplusplus
 }
