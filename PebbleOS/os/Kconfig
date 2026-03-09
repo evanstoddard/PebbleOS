@@ -50,5 +50,9 @@ config MAIN_EVENT_LOOP_TAKE_TIMEOUT_MS
   int "Maximum time to block waiting for event."
   default 1000
 
+config MFG_SERIAL_NUMBER_SIZE
+  int "Size of serial number not including NULL terminator"
+  default 12
+
 module = APP
 module-str = APP
