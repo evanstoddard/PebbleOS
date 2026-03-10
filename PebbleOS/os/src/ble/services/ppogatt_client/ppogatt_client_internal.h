@@ -61,6 +61,16 @@ typedef enum {
   PPoGATTPacketTypeInvalidRangeStart,
 } PPoGATTPacketType_t;
 
+typedef enum {
+  PPoGATTStateDisconnectedReadingMeta,
+  PPoGATTStateDisconnectedSubscribingData,
+  // StateConnectedClosedAwaitingResetRequest, // Server-only state
+  PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedReset,
+  PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedResetStalled,
+  PPoGATTStateConnectedClosedAwaitingResetCompleteRemoteInitiatedReset,
+  PPoGATTStateConnectedOpen,
+} PPoGATTClientState_t;
+
 typedef struct PPoGATTPacket_t {
   PPoGATTPacketType_t type : 3;
   uint8_t sn : PPOGATT_SN_BITS;
@@ -117,7 +127,37 @@ typedef struct PPoGATT_Client_t {
   struct bt_gatt_subscribe_params subscribe_params;
   struct bt_gatt_discover_params ccc_disc_params;
 
+  PPoGATTClientState_t state;
+
   PPoGATTMetaV1_t meta;
+
+  struct {
+    // If not 0, will allocate and populate correct reset packet and send out
+    PPoGATTPacketType_t send_reset_packet_and_type;
+
+    // If not 0, will allocate and populate ACK packet and send out
+    PPoGATTPacketType_t send_ack_packet;
+
+    uint16_t payload_sizes[PPOGATT_SN_MOD_DIV];
+    uint8_t tx_window_size;
+    uint8_t rx_window_size;
+
+    /* AckTimeoutState ack_timeout_state; */
+
+    //! Number of consecutive timeouts so far
+    uint8_t timeouts_counter;
+
+    uint8_t next_expected_ack_sn;
+    uint8_t next_data_sn;
+
+    bool send_rx_ack_now;              //! True if we want to flush the Ack immediately!
+    uint8_t outstanding_rx_ack_count;  //! Count of how many data packets we have yet to Ack
+
+  } tx_ctx;
+
+  struct {
+    uint8_t next_expected_data_sn;
+  } rx_ctx;
 
 } PPoGATT_Client_t;
 
