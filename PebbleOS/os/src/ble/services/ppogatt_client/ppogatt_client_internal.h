@@ -71,6 +71,12 @@ typedef enum {
   PPoGATTStateConnectedOpen,
 } PPoGATTClientState_t;
 
+typedef enum {
+  PPoGATTAckTimeoutState_Inactive = 0,
+  PPoGATTAckTimeoutState_Active = 1,
+  PPoGATTAckTimeoutState_TimedOut = PPoGATTAckTimeoutState_Active + PPOGATT_TIMEOUT_TICKS,
+} PPoGATTAckTimeoutState_t;
+
 /**
  * @typedef PPoGATTPacketHeader_t
  * @brief Header for PPoGATT packet header
@@ -151,6 +157,9 @@ typedef struct PPoGATT_Client_t {
 
   PPoGATTMetaV1_t meta;
 
+  uint8_t resets_counter;
+  bool disconnect_requested;
+
   struct {
     // If not 0, will allocate and populate correct reset packet and send out
     PPoGATTPacketType_t send_reset_packet_and_type;
@@ -162,7 +171,7 @@ typedef struct PPoGATT_Client_t {
     uint8_t tx_window_size;
     uint8_t rx_window_size;
 
-    /* AckTimeoutState ack_timeout_state; */
+    PPoGATTAckTimeoutState_t ack_timeout_state;
 
     //! Number of consecutive timeouts so far
     uint8_t timeouts_counter;

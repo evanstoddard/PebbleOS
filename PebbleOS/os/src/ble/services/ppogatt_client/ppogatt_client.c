@@ -73,6 +73,8 @@ static struct {
 
   struct k_work ack_work;
   struct k_timer ack_timer;
+
+  uint8_t disconnect_counter;
 } prv_inst;
 
 /*****************************************************************************
@@ -138,11 +140,82 @@ static void prv_destroy_all_clients(void) {
  *****************************************************************************/
 
 /**
+ * @brief Reset state of ACK timeout
+ *
+ * @param client Pointer to client instance
+ */
+static void prv_reset_ack_timeout(PPoGATT_Client_t *client) {
+  client->tx_ctx.ack_timeout_state = PPoGATTAckTimeoutState_Active;
+}
+
+/**
+ * @brief Returns if a timeout condition has occurred
+ *
+ * @param client Pointer to client instance
+ * @retval true A timeout has occurred
+ * @retval false A timeout has not occurred
+ */
+static bool prv_has_timeout(PPoGATT_Client_t *client) {
+  return (client->tx_ctx.ack_timeout_state != PPoGATTAckTimeoutState_Inactive &&
+          client->tx_ctx.ack_timeout_state >= PPoGATTAckTimeoutState_TimedOut);
+}
+
+/**
+ * @brief Check active timeouts for given client
+ *
+ * @param client Pointer to client instance
+ */
+static void prv_check_client_timeouts(PPoGATT_Client_t *client) {
+  if (client->state == PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedReset ||
+      client->state == PPoGATTStateConnectedClosedAwaitingResetCompleteRemoteInitiatedReset) {
+    if (prv_has_timeout(client)) {
+      LOG_WRN("Timed out waiting for Reset Complete, Resetting again...");
+      prv_start_reset(client);
+    }
+    return;
+  } else if (client->state ==
+             PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedResetStalled) {
+    return;
+  }
+
+  uint8_t sn = client->tx_ctx.next_expected_ack_sn;
+  (void)sn;
+  if (prv_has_timeout(client)) {
+    /* prv_roll_back(client, sn); */
+    // Return, because all packets after the timed-out one have been "rolled back" now,
+    // no point in continuing.
+    return;
+  }
+}
+
+/**
+ * @brief Increment timeout counters for active timeouts for given client
+ *
+ * @param client Pointer to client instance
+ */
+static void prv_increment_client_timeouts(PPoGATT_Client_t *client) {
+  if (client->tx_ctx.ack_timeout_state >= PPoGATTAckTimeoutState_Active) {
+    client->tx_ctx.ack_timeout_state++;
+  }
+}
+
+/**
  * @brief Run every ACK tick
  *
  * @param work Pointer to work instance
  */
-static void prv_ack_work_queue_func(struct k_work *work) {}
+static void prv_ack_work_queue_func(struct k_work *work) {
+  // FIXME: Whatever mutex ends up getting implemented... should've just a global one from the
+  // start...
+  sys_snode_t *node = NULL;
+  sys_snode_t *tmp = NULL;
+
+  SYS_SLIST_FOR_EACH_NODE_SAFE(&prv_inst.clients, node, tmp) {
+    PPoGATT_Client_t *client = (PPoGATT_Client_t *)node;
+    prv_increment_client_timeouts(client);
+    prv_check_client_timeouts(client);
+  }
+}
 
 /**
  * @brief On every expiration of ACK tick (NOTE: Called in an IRQ context)
@@ -314,10 +387,32 @@ static void prv_enter_awaiting_reset_complete(PPoGATT_Client_t *client, bool sel
   }
 
   prv_send_next_packets(client);
+
+  prv_reset_ack_timeout(client);
 }
 
 static void prv_start_reset(PPoGATT_Client_t *client) {
   // TODO: A whole lotta checks...
+  if (++client->resets_counter >= PPOGATT_RESET_COUNT_MAX) {
+    if (client->disconnect_requested) {
+      return;
+    }
+
+    if (++prv_inst.disconnect_counter > PPOGATT_DISCONNECT_COUNT_MAX) {
+      // If we have disconnected too many times, do not disconnect and leave the client in a
+      // "stalled" state, so that we have the option to "unstall" by sending a remote reset
+      client->state = PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedResetStalled;
+      LOG_WRN("Reset request stalled, not disconnecting");
+      return;
+    }
+
+    LOG_ERR("Disconnecting because max resets reached...");
+
+    bt_conn_disconnect(prv_inst.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    client->disconnect_requested = true;
+
+    return;
+  }
 
   prv_enter_awaiting_reset_complete(client, true);
 }
