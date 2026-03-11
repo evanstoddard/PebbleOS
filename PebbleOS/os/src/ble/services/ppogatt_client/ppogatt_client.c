@@ -71,7 +71,20 @@ static struct {
 
   sys_slist_t clients;
 
+  struct k_work ack_work;
+  struct k_timer ack_timer;
 } prv_inst;
+
+/*****************************************************************************
+ * Private Function Prototypes
+ *****************************************************************************/
+
+/**
+ * @brief Start reset process
+ *
+ * @param client Pointer to client instance
+ */
+static void prv_start_reset(PPoGATT_Client_t *client);
 
 /*****************************************************************************
  * Client Lifecycle Management(?)
@@ -121,6 +134,28 @@ static void prv_destroy_all_clients(void) {
 }
 
 /*****************************************************************************
+ * ACK Handling
+ *****************************************************************************/
+
+/**
+ * @brief Run every ACK tick
+ *
+ * @param work Pointer to work instance
+ */
+static void prv_ack_work_queue_func(struct k_work *work) {}
+
+/**
+ * @brief On every expiration of ACK tick (NOTE: Called in an IRQ context)
+ *
+ * @param timer Pointer to timer instance
+ */
+static void prv_on_ack_tick(struct k_timer *timer) {
+  (void)timer;
+  // Must submit to work queue to get execution out of IRQ context
+  k_work_submit(&prv_inst.ack_work);
+}
+
+/*****************************************************************************
  * Packet Transmission
  *****************************************************************************/
 
@@ -131,37 +166,33 @@ static void prv_destroy_all_clients(void) {
  * @param out_size_bytes Pointer to write total packet size to
  * @return Returns pointer to created packet (can be NULL)
  */
-static const PPoGATTPacket_t *prv_prepare_reset_packet(PPoGATT_Client_t *client,
-                                                       uint16_t *out_size_bytes) {
-  PPoGATTPacket_t *packet = NULL;
+static const PPoGATTPacketHeader_t *prv_prepare_reset_packet(PPoGATT_Client_t *client,
+                                                             uint16_t *out_size_bytes) {
+  PPoGATTPacketHeader_t *packet = NULL;
 
   __ASSERT((client->tx_ctx.send_reset_packet_and_type == PPoGATTPacketTypeResetRequest ||
             client->tx_ctx.send_reset_packet_and_type == PPoGATTPacketTypeResetComplete),
            "Invalid outbound PPoGATT reset type!");
 
   if (client->tx_ctx.send_reset_packet_and_type == PPoGATTPacketTypeResetRequest) {
-    packet =
-        kernel_heap_malloc(sizeof(PPoGATTPacket_t) + sizeof(PPoGATTResetRequestClientIDPayload_t));
+    packet = kernel_heap_malloc(sizeof(PPoGATTClientResetRequest_t));
 
     if (packet == NULL) {
       return NULL;
     }
-
     packet->type = PPoGATTPacketTypeResetRequest;
     packet->sn = 0;
 
-    PPoGATTResetRequestClientIDPayload_t *payload =
-        (PPoGATTResetRequestClientIDPayload_t *)packet->payload;
-    payload->ppogatt_version = client->meta.ppogatt_max_version;
-    memcpy(payload->serial_number, "ABCDEF012345", CONFIG_MFG_SERIAL_NUMBER_SIZE);
+    PPoGATTClientResetRequest_t *req = (PPoGATTClientResetRequest_t *)packet;
+    req->ppogatt_version = client->meta.ppogatt_max_version;
+    memcpy(req->serial_number, "ABCDEF012345", CONFIG_MFG_SERIAL_NUMBER_SIZE);
 
-    *out_size_bytes = sizeof(PPoGATTPacket_t) + sizeof(PPoGATTResetRequestClientIDPayload_t);
+    *out_size_bytes = sizeof(PPoGATTPacketHeader_t);
 
     return packet;
   }
 
-  packet =
-      kernel_heap_malloc(sizeof(PPoGATTPacket_t) + sizeof(PPoGATTResetCompleteClientIDPayloadV1_t));
+  packet = kernel_heap_malloc(sizeof(PPoGATTResetComplete_t));
 
   if (packet == NULL) {
     return NULL;
@@ -171,13 +202,11 @@ static const PPoGATTPacket_t *prv_prepare_reset_packet(PPoGATT_Client_t *client,
   packet->sn = 0;
 
   // FIXME: Again, assuming only enhanced features are supported...
+  PPoGATTResetComplete_t *res = (PPoGATTResetComplete_t *)packet;
+  res->ppogatt_max_rx_window = client->tx_ctx.rx_window_size;
+  res->ppogatt_max_tx_window = client->tx_ctx.tx_window_size;
 
-  PPoGATTResetCompleteClientIDPayloadV1_t *payload =
-      (PPoGATTResetCompleteClientIDPayloadV1_t *)packet->payload;
-  payload->ppogatt_max_rx_window = client->tx_ctx.rx_window_size;
-  payload->ppogatt_max_tx_window = client->tx_ctx.tx_window_size;
-
-  *out_size_bytes = sizeof(PPoGATTPacket_t) + sizeof(PPoGATTResetCompleteClientIDPayloadV1_t);
+  *out_size_bytes = sizeof(PPoGATTResetComplete_t);
 
   return packet;
 }
@@ -189,8 +218,8 @@ static const PPoGATTPacket_t *prv_prepare_reset_packet(PPoGATT_Client_t *client,
  * @param out_size_bytes Pointer to write size of packet to
  * @return Returns pointer to next packet (may be NULL)
  */
-static const PPoGATTPacket_t *prv_prepare_next_packet(PPoGATT_Client_t *client,
-                                                      uint16_t *out_size_bytes) {
+static const PPoGATTPacketHeader_t *prv_prepare_next_packet(PPoGATT_Client_t *client,
+                                                            uint16_t *out_size_bytes) {
   if (client->tx_ctx.send_reset_packet_and_type != 0) {
     LOG_INF("Queued up reset packet for transmission.");
     return prv_prepare_reset_packet(client, out_size_bytes);
@@ -220,7 +249,7 @@ static void prv_finalize_queued_packet(PPoGATT_Client_t *client, uint16_t payloa
  */
 static void prv_send_next_packets(PPoGATT_Client_t *client) {
   uint16_t payload_size = 0;
-  const PPoGATTPacket_t *packet = NULL;
+  const PPoGATTPacketHeader_t *packet = NULL;
 
   // Cap the number of times we loop here, to avoid blocking the task for too long.
   uint8_t loop_count = 0;
@@ -249,10 +278,6 @@ static void prv_send_next_packets(PPoGATT_Client_t *client) {
   // Ok to call free with NULL ptr as heap API handles that gracefully
   kernel_heap_free((void *)packet);
 }
-
-/*****************************************************************************
- * Reset Handling
- *****************************************************************************/
 
 /**
  * @brief Enter state awaiting for reset complete
@@ -291,15 +316,120 @@ static void prv_enter_awaiting_reset_complete(PPoGATT_Client_t *client, bool sel
   prv_send_next_packets(client);
 }
 
-/**
- * @brief Start reset process
- *
- * @param client Pointer to client instance
- */
 static void prv_start_reset(PPoGATT_Client_t *client) {
   // TODO: A whole lotta checks...
 
   prv_enter_awaiting_reset_complete(client, true);
+}
+
+/*****************************************************************************
+ * RX Packet Handling
+ *****************************************************************************/
+
+/**
+ * @brief Handle reset request packet
+ *
+ * @param client Pointer to client instance
+ */
+static void prv_handle_reset_request(PPoGATT_Client_t *client) {
+  if (client->state == PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedReset) {
+    LOG_INF("Ignoring reset request because local client already requested.");
+    return;
+  } else if (client->state ==
+             PPoGATTStateConnectedClosedAwaitingResetCompleteRemoteInitiatedReset) {
+    LOG_INF("Ignoring reset request because remote server already requested.");
+    return;
+  }
+
+  LOG_INF("PPoGATT reset requested by remote.");
+  prv_enter_awaiting_reset_complete(client, false);
+}
+
+/**
+ * @brief Handle incoming reset complete message
+ *
+ * @param client Pointer to client instance
+ * @param header Pointer to header of message
+ */
+static void prv_handle_reset_complete(PPoGATT_Client_t *client, PPoGATTPacketHeader_t *header) {
+  PPoGATTResetComplete_t *packet = (PPoGATTResetComplete_t *)header;
+  LOG_INF(
+      "Received Reset Complete Message:\r\n"
+      "\tMax RX Window: %u\r\n"
+      "\tMax TX Window: %u\r\n",
+      packet->ppogatt_max_rx_window, packet->ppogatt_max_tx_window);
+
+  // TODO: Actually handle it
+}
+
+/**
+ * @brief Handle incoming ACK packet
+ *
+ * @param client Pointer to client instance
+ * @param header Pointer to header of packet
+ */
+static void prv_handle_ack_packet(PPoGATT_Client_t *client, PPoGATTPacketHeader_t *header) {
+  LOG_INF(
+      "Received ACK:\r\n"
+      "\t SN: %u",
+      header->sn);
+
+  // TODO: Handle the ACK
+}
+
+/**
+ * @brief Handle incoming data packet
+ *
+ * @param client Pointer to client instance
+ * @param header Pointer to header of packet
+ * @param packet_len_bytes Length of total packet (including header) in bytes
+ */
+static void prv_handle_data_packet(PPoGATT_Client_t *client, PPoGATTPacketHeader_t *header,
+                                   size_t packet_len_bytes) {
+  PPoGATTDataPacket_t *packet = (PPoGATTDataPacket_t *)header;
+  size_t payload_len_bytes = packet_len_bytes - sizeof(PPoGATTDataPacket_t);
+
+  LOG_INF(
+      "Received data packet:\r\n"
+      "\tSN: %u\r\n"
+      "\tLen: %zu bytes",
+      header->sn, payload_len_bytes);
+
+  LOG_HEXDUMP_INF(packet->payload, payload_len_bytes, "Data payload:");
+}
+
+/**
+ * @brief Handling incoming packet
+ *
+ * @param client Pointer to client instance
+ * @param buf Pointer to incoming buffer
+ * @param len Length of incoming buffer
+ */
+static void prv_handle_incoming_packet(PPoGATT_Client_t *client, const void *buf, uint16_t len) {
+  if (len < sizeof(PPoGATTPacketHeader_t)) {
+    LOG_WRN("Invalid PPoGATT packet header size: %u", len);
+    return;
+  }
+
+  PPoGATTPacketHeader_t *header = (PPoGATTPacketHeader_t *)buf;
+
+  switch (header->type) {
+    case PPoGATTPacketTypeResetRequest:
+      prv_handle_reset_request(client);
+      break;
+    case PPoGATTPacketTypeResetComplete:
+      prv_handle_reset_complete(client, header);
+      break;
+    case PPoGATTPacketTypeAck:
+      prv_handle_ack_packet(client, header);
+      break;
+    case PPoGATTPacketTypeData:
+      prv_handle_data_packet(client, header, len);
+      break;
+    default:
+      LOG_WRN("PPoGATT packet type not recognized: 0x%02X", header->type);
+      break;
+  }
 }
 
 /*****************************************************************************
@@ -317,8 +447,9 @@ static void prv_start_reset(PPoGATT_Client_t *client) {
  */
 static uint8_t prv_on_data_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
                                      const void *buf, uint16_t len) {
-  LOG_HEXDUMP_INF(buf, len, "Received notification:");
+  PPoGATT_Client_t *client = CONTAINER_OF(params, PPoGATT_Client_t, subscribe_params);
 
+  prv_handle_incoming_packet(client, buf, len);
   return BT_GATT_ITER_STOP;
 }
 
@@ -562,6 +693,12 @@ BT_CONN_CB_DEFINE(prv_bt_callbacks) = {
  *****************************************************************************/
 
 int ppogatt_client_init(void) {
+  k_work_init(&prv_inst.ack_work, prv_ack_work_queue_func);
+  k_timer_init(&prv_inst.ack_timer, prv_on_ack_tick, NULL);
+
+  k_timer_start(&prv_inst.ack_timer, K_SECONDS(PPOGATT_TIMEOUT_TICK_INTERVAL_SECS),
+                K_SECONDS(PPOGATT_TIMEOUT_TICK_INTERVAL_SECS));
+
   ble_conn_mgr_register_client(&prv_ble_client);
   return 0;
 }

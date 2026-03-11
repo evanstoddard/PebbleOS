@@ -71,26 +71,46 @@ typedef enum {
   PPoGATTStateConnectedOpen,
 } PPoGATTClientState_t;
 
-typedef struct PPoGATTPacket_t {
+/**
+ * @typedef PPoGATTPacketHeader_t
+ * @brief Header for PPoGATT packet header
+ *
+ */
+typedef struct PPoGATTPacketHeader_t {
   PPoGATTPacketType_t type : 3;
   uint8_t sn : PPOGATT_SN_BITS;
-  uint8_t payload[];
-} __attribute__((__packed__)) PPoGATTPacket_t;
+} __attribute__((__packed__)) PPoGATTPacketHeader_t;
 
-//! Client identification payload that is attached to the client's Reset Request messages
-typedef struct PPoGATTResetRequestClientIDPayload_t {
-  //! The PPoGATT version that the client wants to use.
-  //! Must be within the server's [ppogatt_min_version, ppogatt_max_version]
+/**
+ * @typedef PPoGATTClientResetRequest_t
+ * @brief PPoGATT reset request from client
+ *
+ */
+typedef struct PPoGATTClientResetRequest_t {
+  PPoGATTPacketHeader_t header;
   uint8_t ppogatt_version;
-
-  //! The serial number of the client device.
   char serial_number[CONFIG_MFG_SERIAL_NUMBER_SIZE];
-} __attribute__((__packed__)) PPoGATTResetRequestClientIDPayload_t;
+} __attribute__((__packed__)) PPoGATTClientResetRequest_t;
 
-typedef struct PPoGATTResetCompleteClientIDPayloadV1_t {
+/**
+ * @typedef PPoGATTResetComplete_t
+ * @brief PPoGATT reset complete packet
+ *
+ */
+typedef struct PPoGATTResetComplete_t {
   uint8_t ppogatt_max_rx_window;
   uint8_t ppogatt_max_tx_window;
-} __attribute__((__packed__)) PPoGATTResetCompleteClientIDPayloadV1_t;
+} __attribute__((__packed__)) PPoGATTResetComplete_t;
+
+/**
+ * @typedef PPoGATTDataPacket_t
+ * @brief PPoGATT data packet;
+ *
+ */
+typedef struct PPoGATTDataPacket_t {
+  PPoGATTPacketHeader_t header;
+  uint8_t payload[];
+} __attribute__((__packed__)) PPoGATTDataPacket_t;
 
 typedef struct PPoGATTMetaV0_t {
   uint8_t ppogatt_min_version;
