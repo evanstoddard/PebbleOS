@@ -260,7 +260,7 @@ static const PPoGATTPacketHeader_t *prv_prepare_reset_packet(PPoGATT_Client_t *c
     req->ppogatt_version = client->meta.ppogatt_max_version;
     memcpy(req->serial_number, "ABCDEF012345", CONFIG_MFG_SERIAL_NUMBER_SIZE);
 
-    *out_size_bytes = sizeof(PPoGATTPacketHeader_t);
+    *out_size_bytes = sizeof(PPoGATTClientResetRequest_t);
 
     return packet;
   }
@@ -392,7 +392,6 @@ static void prv_enter_awaiting_reset_complete(PPoGATT_Client_t *client, bool sel
 }
 
 static void prv_start_reset(PPoGATT_Client_t *client) {
-  // TODO: A whole lotta checks...
   if (++client->resets_counter >= PPOGATT_RESET_COUNT_MAX) {
     if (client->disconnect_requested) {
       return;
@@ -454,7 +453,20 @@ static void prv_handle_reset_complete(PPoGATT_Client_t *client, PPoGATTPacketHea
       "\tMax TX Window: %u\r\n",
       packet->ppogatt_max_rx_window, packet->ppogatt_max_tx_window);
 
-  // TODO: Actually handle it
+  // TODO: Handle session creation
+
+  prv_inst.disconnect_counter = 0;
+  client->resets_counter = 0;
+
+  if (client->state == PPoGATTStateConnectedClosedAwaitingResetCompleteSelfInitiatedReset) {
+    client->tx_ctx.send_reset_packet_and_type = PPoGATTPacketTypeResetComplete;
+    prv_send_next_packets(client);
+  }
+
+  client->state = PPoGATTStateConnectedOpen;
+
+  client->tx_ctx.tx_window_size = MIN(client->tx_ctx.tx_window_size, packet->ppogatt_max_rx_window);
+  client->tx_ctx.rx_window_size = MIN(client->tx_ctx.rx_window_size, packet->ppogatt_max_tx_window);
 }
 
 /**

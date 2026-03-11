@@ -282,12 +282,23 @@ static void prv_on_security_changed(struct bt_conn *conn, bt_security_t level,
   }
 }
 
+/**
+ * @brief On disconnected callback
+ *
+ * @param conn Pointer to connection instance
+ * @param err Err during disconnection
+ */
+static void prv_on_disconnected(struct bt_conn *conn, uint8_t err) {
+  ble_advertising_begin();
+}
+
 /*****************************************************************************
  * Connection Callbacks
  *****************************************************************************/
 
 BT_CONN_CB_DEFINE(prv_conn_callbacks) = {
     .security_changed = prv_on_security_changed,
+    .disconnected = prv_on_disconnected,
 };
 
 /*****************************************************************************
