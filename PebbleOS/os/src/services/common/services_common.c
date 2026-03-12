@@ -3,25 +3,18 @@
  */
 
 /**
- * @file main.c
- * @brief Zephyr application entry point. Initializes the kernel heap and
- * launches the kernel main thread.
+ * @file services_common.c
+ * @author Evan Stoddard
+ * @brief Common OS services
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
+#include "services_common.h"
 
-#include "kernel/kernel_heap.h"
-
-#include "kernel/kernel_main.h"
-
-#include "services/services.h"
+#include "comm_session/comm_session.h"
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
-
-LOG_MODULE_REGISTER(main);
 
 /*****************************************************************************
  * Variables
@@ -35,16 +28,6 @@ LOG_MODULE_REGISTER(main);
  * Functions
  *****************************************************************************/
 
-int main(void) {
-  LOG_INF("Booting PebbleOS.");
-
-  // Initialize services needed by main kernel
-  services_early_init();
-
-  // Initialize kernel heap
-  kernel_heap_init();
-
-  kernel_main_init();
-
-  return 0;
+void services_common_init(void) {
+  comm_session_init();
 }

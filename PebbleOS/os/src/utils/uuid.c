@@ -3,29 +3,26 @@
  */
 
 /**
- * @file main.c
- * @brief Zephyr application entry point. Initializes the kernel heap and
- * launches the kernel main thread.
+ * @file uuid.c
+ * @author Evan Stoddard
+ * @brief Collection of UUID definitions and helper functions
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
+#include "uuid.h"
 
-#include "kernel/kernel_heap.h"
-
-#include "kernel/kernel_main.h"
-
-#include "services/services.h"
+#include <string.h>
 
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
 
-LOG_MODULE_REGISTER(main);
-
 /*****************************************************************************
  * Variables
  *****************************************************************************/
+
+static const struct uuid prv_system_uuid = UUID_SYSTEM;
+
+static const struct uuid prv_invalid_uuid = UUID_INVALID;
 
 /*****************************************************************************
  * Prototypes
@@ -35,16 +32,10 @@ LOG_MODULE_REGISTER(main);
  * Functions
  *****************************************************************************/
 
-int main(void) {
-  LOG_INF("Booting PebbleOS.");
-
-  // Initialize services needed by main kernel
-  services_early_init();
-
-  // Initialize kernel heap
-  kernel_heap_init();
-
-  kernel_main_init();
-
-  return 0;
+bool uuid_is_system(struct uuid *uuid) {
+  return (memcmp(uuid, &prv_system_uuid, sizeof(struct uuid)) == 0);
 }
+
+bool uuid_is_invalid(struct uuid *uuid) {
+  return (memcmp(uuid, &prv_invalid_uuid, sizeof(struct uuid)) == 0);
+};

@@ -18,6 +18,9 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/uuid.h>
 
+#include "services/common/comm_session/comm_session.h"
+#include "services/common/comm_session/comm_transport.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -187,6 +190,9 @@ typedef struct PPoGATT_Client_t {
   struct {
     uint8_t next_expected_data_sn;
   } rx_ctx;
+
+  CommSession_t *session;
+  CommTransportDestination_t destination;
 
 } PPoGATT_Client_t;
 

@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/uuid.h>
 
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/uuid.h>
 
 #include "ble/ble_conn_mgr.h"
 #include "ble/pebble_bt.h"
@@ -25,7 +26,10 @@
 #include "kernel/kernel_heap.h"
 
 #include "ppogatt_client_internal.h"
-#include "zephyr/sys/uuid.h"
+
+#include "services/common/comm_session/comm_transport.h"
+
+#include "utils/uuid.h"
 
 /*****************************************************************************
  * Definitions
@@ -89,6 +93,96 @@ static struct {
 static void prv_start_reset(PPoGATT_Client_t *client);
 
 /*****************************************************************************
+ * Comm Session Bindings
+ *****************************************************************************/
+
+/**
+ * @brief Transport implementation for sending next packet
+ *
+ * @param transport Pointer to transport (client) instance
+ */
+static void prv_transport_send_next(CommTransport_t *transport) {
+  // TODO: Implement this...
+}
+
+/**
+ * @brief Close current transport session
+ *
+ * @param transport Pointer to transport instance
+ */
+static void prv_transport_close(CommTransport_t *transport) {
+  // TODO: Implement this...
+}
+
+/**
+ * @brief Reset given session
+ *
+ * @param transport Pointer to transport instance
+ */
+static void prv_transport_reset(CommTransport_t *transport) {
+  // TODO: Implement this...
+}
+
+/**
+ * @brief Return UUID associated with given transport instance
+ *
+ * @param transport Pointer to transport instance
+ */
+static const struct uuid *prv_transport_get_uuid(CommTransport_t *transport) {
+  // TODO: Implement this...
+  PPoGATT_Client_t *client = (PPoGATT_Client_t *)transport;
+
+  return &client->meta.app_uuid;
+}
+
+/**
+ * @brief Return type of transport
+ *
+ * @param transport Pointer to transport instance
+ * @return Returns enum assocated with PPoGATT transport
+ */
+static CommSessionTransportType_t prv_transport_type(CommTransport_t *transport) {
+  return CommSessionTransportType_PPoGATT;
+}
+
+/**
+ * @brief Gotta figure out what this does...
+ *
+ * @param session Pointer to session instance
+ * @return Returns some bool that means something...
+ */
+static bool prv_transport_schedule(CommSession_t *session) {
+  // TODO: Implement this...
+
+  return false;
+}
+
+/**
+ * @brief Again... gotta figure out what this is...
+ *
+ * @param transport Pointer to transport instance
+ * @return Returns some bool that means something...
+ */
+static bool prv_transport_schedule_task(CommTransport_t *transport) {
+  // TODO: Implement this...
+
+  return false;
+}
+
+/**
+ * @brief Bindings used for comm session transport API
+ */
+static CommTransportImpl_t prv_transport_impl = {
+    .send_next = prv_transport_send_next,
+    .close = prv_transport_close,
+    .reset = prv_transport_reset,
+    .get_uuid = prv_transport_get_uuid,
+    .get_type = prv_transport_type,
+    .schedule = prv_transport_schedule,
+    .is_current_task_schedule_task = prv_transport_schedule_task,
+};
+
+/*****************************************************************************
  * Client Lifecycle Management(?)
  *****************************************************************************/
 
@@ -116,6 +210,15 @@ static PPoGATT_Client_t *prv_create_client(void) {
  */
 static void prv_destroy_client(PPoGATT_Client_t *client) {
   __ASSERT(client, "Attempted to destroy a NULL PPoGATT client!");
+
+  if (client->state > PPoGATTStateDisconnectedSubscribingData && prv_inst.conn) {
+    bt_gatt_unsubscribe(prv_inst.conn, &client->subscribe_params);
+  }
+
+  if (client->state == PPoGATTStateConnectedOpen) {
+    // TODO: Proper reason handling.  Right now, just for non-existent analytics...
+    comm_session_close(client->session, CommSessionCloseReason_ClosedLocally);
+  }
 
   sys_slist_find_and_remove(&prv_inst.clients, (sys_snode_t *)client);
 
@@ -341,6 +444,7 @@ static void prv_send_next_packets(PPoGATT_Client_t *client) {
 
     const uint8_t max_loop_count = 10;
     if (loop_count > max_loop_count) {
+      // TODO: Implement async packet transmission
       // If more bytes left to send (but loop_count became >= 10),
       // schedule a callback to process them later to avoid blocking the task for too long:
       /* prv_send_next_packets_async(client); */
@@ -387,7 +491,6 @@ static void prv_enter_awaiting_reset_complete(PPoGATT_Client_t *client, bool sel
   }
 
   prv_send_next_packets(client);
-
   prv_reset_ack_timeout(client);
 }
 
@@ -454,6 +557,14 @@ static void prv_handle_reset_complete(PPoGATT_Client_t *client, PPoGATTPacketHea
       packet->ppogatt_max_rx_window, packet->ppogatt_max_tx_window);
 
   // TODO: Handle session creation
+  CommSession_t *session =
+      comm_session_open((CommTransport_t *)client, &prv_transport_impl, client->destination);
+
+  if (!session) {
+    LOG_ERR("Couldn't allocate new comm session.  Deleting PPoGATT client.");
+    prv_destroy_client(client);
+    return;
+  }
 
   prv_inst.disconnect_counter = 0;
   client->resets_counter = 0;
@@ -668,6 +779,13 @@ static uint8_t prv_on_meta_read(struct bt_conn *conn, uint8_t err,
       "\tSession Type: %u",
       meta_version, client->meta.ppogatt_min_version, client->meta.ppogatt_max_version, uuid_str,
       client->meta.pp_session_type);
+
+  if (meta->pp_session_type == PPoGATTSessionType_Hybrid) {
+    client->destination = CommTransportDestinationHybrid;
+  } else {
+    const bool is_system = uuid_is_system(&client->meta.app_uuid);
+    client->destination = is_system ? CommTransportDestinationSystem : CommTransportDestinationApp;
+  }
 
   prv_subscribe_to_data_char(client);
 
