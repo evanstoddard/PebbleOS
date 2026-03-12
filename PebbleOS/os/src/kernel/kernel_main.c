@@ -19,6 +19,7 @@
 
 #include "kernel_background.h"
 #include "main_event_loop.h"
+#include "events.h"
 
 #include "ble/ble_advertising.h"
 #include "ble/ble_conn_mgr.h"
@@ -50,6 +51,8 @@ static struct {
  * @brief Bringing the rest of the threads and services for PebbleOS
  */
 static void prv_main_init(void) {
+  events_init();
+
   services_init();
 
   kernel_background_init();
