@@ -48,6 +48,11 @@ void comm_session_init(void) {
   sys_slist_init(&prv_inst.sessions);
 }
 
+bool comm_session_send_data(CommSession_t *session, uint16_t endpoint_id, const uint8_t *data,
+                            size_t length, uint32_t timeout_ms) {
+  return false;
+}
+
 CommSession_t *comm_session_get_system_session(void) {
   // TODO: Actually do this...
   return NULL;

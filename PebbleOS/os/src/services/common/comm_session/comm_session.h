@@ -11,6 +11,10 @@
 #ifndef comm_session_h
 #define comm_session_h
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,6 +22,8 @@ extern "C" {
 /*****************************************************************************
  * Definitions
  *****************************************************************************/
+
+#define COMM_SESSION_DEFAULT_TIMEOUT (4000)
 
 /*****************************************************************************
  * Structs, Unions, Enums, & Typedefs
@@ -64,6 +70,19 @@ typedef enum {
  * @brief Initialize comm session module (not initializing a session)
  */
 void comm_session_init(void);
+
+/**
+ * @brief Queue up data to be sent over session
+ *
+ * @param session Pointer to session instance
+ * @param endpoint_id ID of endpoint (akin to TCP port number I think...)
+ * @param data Pointer to data
+ * @param length Length of data
+ * @param timeout_ms Timeout in ms
+ * @return Returns false on failure
+ */
+bool comm_session_send_data(CommSession_t *session, uint16_t endpoint_id, const uint8_t *data,
+                            size_t length, uint32_t timeout_ms);
 
 /**
  * @brief Returns pointer to comm session strictly for system use
