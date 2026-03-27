@@ -44,6 +44,8 @@ typedef struct CommSession_t {
 
   CommTransportDestination_t destination;
 
+  sys_slist_t send_jobs;
+
 } CommSession_t;
 
 /*****************************************************************************

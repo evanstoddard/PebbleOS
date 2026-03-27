@@ -67,6 +67,6 @@ static void prv_schedule_request(CommSession_t *session) {
  * Functions
  *****************************************************************************/
 
-void session_remote_version_start_requests(CommSession_t *session) {
+void comm_session_remote_version_start_requests(CommSession_t *session) {
   prv_schedule_request(session);
 }

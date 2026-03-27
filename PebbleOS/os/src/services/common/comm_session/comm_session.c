@@ -16,6 +16,7 @@
 
 #include "comm_transport.h"
 #include "comm_session_internal.h"
+#include "comm_session_remote_version.h"
 
 #include "kernel/kernel_heap.h"
 
@@ -91,7 +92,9 @@ CommSession_t *comm_session_open(CommTransport_t *transport,
 
   sys_slist_prepend(&prv_inst.sessions, (sys_snode_t *)session);
 
-  // TODO: Kick off requests
+  sys_slist_init(&session->send_jobs);
+
+  comm_session_remote_version_start_requests(session);
 
   // TODO: Send kernel event
 

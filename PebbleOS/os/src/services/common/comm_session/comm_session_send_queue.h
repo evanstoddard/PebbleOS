@@ -29,6 +29,8 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
+typedef struct CommSession_t CommSession_t;
+
 typedef struct CommSessionSendQueueJob_t CommSessionSendQueueJob_t;
 
 typedef struct CommSessionSendJobImpl_t {
@@ -68,6 +70,14 @@ typedef struct CommSessionSendQueueJob_t {
 /*****************************************************************************
  * Function Prototypes
  *****************************************************************************/
+
+/**
+ * @brief Queue up job for transmission
+ *
+ * @param session Pointer to session
+ * @param job Pointer to job
+ */
+void comm_session_send_queue_add_job(CommSession_t *session, CommSessionSendQueueJob_t *job);
 
 #ifdef __cplusplus
 }

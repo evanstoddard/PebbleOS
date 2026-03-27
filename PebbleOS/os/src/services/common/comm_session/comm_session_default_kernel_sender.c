@@ -53,13 +53,114 @@ typedef struct SendBuffer_t {
  * Private Functions
  *****************************************************************************/
 
+/**
+ * @brief Returns remaining length (unconsumed bytes) of send buffer
+ *
+ * @param send_buffer Pointer of send buffer
+ * @return Remaining length of send buffer
+ */
+static size_t prv_get_remaining_length_bytes(const SendBuffer_t *send_buffer) {
+  return (sizeof(PebbleProtocolHeader_t) + send_buffer->written_length -
+          send_buffer->consumed_length);
+}
+
+/**
+ * @brief Get current pointer of read buffer
+ *
+ * @param send_buffer Pointer to send buffer
+ * @return Returns pointer of read buffer
+ */
+static const uint8_t *prv_get_read_pointer(const SendBuffer_t *send_buffer) {
+  return ((const uint8_t *)&send_buffer->header + send_buffer->consumed_length);
+}
+
+/**
+ * @brief Deallocates send buffer
+ *
+ * @param send_buffer Send buffer
+ */
+static void prv_destroy_send_buffer(SendBuffer_t *send_buffer) {
+  kernel_heap_free(send_buffer);
+}
+
 /*****************************************************************************
  * Send Queue Implementation
  *****************************************************************************/
 
-static CommSessionSendJobImpl_t prv_queue_impl = {
+/**
+ * @brief Get length of message in bytes
+ *
+ * @param job [TODO:parameter]
+ * @return [TODO:return]
+ */
+static size_t prv_queue_impl_get_length(const CommSessionSendQueueJob_t *job) {
+  return prv_get_remaining_length_bytes((SendBuffer_t *)job);
+}
 
-};
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_job [TODO:parameter]
+ * @param start_offset [TODO:parameter]
+ * @param length [TODO:parameter]
+ * @param data_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+static size_t prv_queue_impl_copy(const CommSessionSendQueueJob_t *send_job, int start_offset,
+                                  size_t length, uint8_t *data_out) {
+  SendBuffer_t *send_buffer = (SendBuffer_t *)send_job;
+
+  const size_t length_remaining = prv_get_remaining_length_bytes(send_buffer);
+  const size_t length_after_offset = (length_remaining - start_offset);
+  const size_t length_to_copy = MIN(length_after_offset, length);
+
+  memcpy(data_out, prv_get_read_pointer(send_buffer) + start_offset, length_to_copy);
+
+  return length_to_copy;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_job [TODO:parameter]
+ * @param data_out [TODO:parameter]
+ * @return [TODO:return]
+ */
+static size_t prv_queue_impl_get_read_pointer(const CommSessionSendQueueJob_t *send_job,
+                                              const uint8_t **data_out) {
+  SendBuffer_t *send_buffer = (SendBuffer_t *)send_job;
+
+  *data_out = prv_get_read_pointer(send_buffer);
+
+  return prv_get_remaining_length_bytes(send_buffer);
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_job [TODO:parameter]
+ * @param length [TODO:parameter]
+ */
+static void prv_queue_impl_consume(const CommSessionSendQueueJob_t *send_job, size_t length) {
+  SendBuffer_t *send_buffer = (SendBuffer_t *)send_job;
+  send_buffer->consumed_length += length;
+}
+
+/**
+ * @brief [TODO:description]
+ *
+ * @param send_job [TODO:parameter]
+ */
+static void prv_queue_impl_free(CommSessionSendQueueJob_t *send_job) {
+  prv_destroy_send_buffer((SendBuffer_t *)send_job);
+}
+
+static CommSessionSendJobImpl_t prv_queue_impl = {
+    .get_length = prv_queue_impl_get_length,
+    .copy = prv_queue_impl_copy,
+    .get_read_pointer = prv_queue_impl_get_read_pointer,
+    .consume = prv_queue_impl_consume,
+    .free = prv_queue_impl_free};
 
 /*****************************************************************************
  * Functions
@@ -112,5 +213,5 @@ void comm_session_send_buffer_end_write(SendBuffer_t *send_buffer) {
 
   send_buffer->header.length = sys_cpu_to_be16(send_buffer->written_length);
 
-  // TODO: Queue up job
+  comm_session_send_queue_add_job(session, (CommSessionSendQueueJob_t *)send_buffer);
 }

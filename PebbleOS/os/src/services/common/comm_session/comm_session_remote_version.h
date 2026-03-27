@@ -23,7 +23,7 @@ extern "C" {
  * Structs, Unions, Enums, & Typedefs
  *****************************************************************************/
 
-typedef struct CommSesstion_t CommSession_t;
+typedef struct CommSession_t CommSession_t;
 
 /*****************************************************************************
  * Function Prototypes
@@ -34,7 +34,7 @@ typedef struct CommSesstion_t CommSession_t;
  *
  * @param session Pointer to session instance
  */
-void session_remote_version_start_requests(CommSession_t *session);
+void comm_session_remote_version_start_requests(CommSession_t *session);
 
 #ifdef __cplusplus
 }
